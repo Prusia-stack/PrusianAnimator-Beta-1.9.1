@@ -1,0 +1,3645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PrusianAnimator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#07080b;--p1:#0f1116;--p2:#161920;--p3:#1c2030;
+  --b1:#22262f;--b2:#2a3040;
+  --ac:#00c8f0;--a2:#f09000;--a3:#44ef88;
+  --tx:#b0b8cc;--t2:#6a7288;--t3:#363c4e;
+  --rd:#ff3c4e;--gn:#3cefaa;--yl:#f0c000;--pu:#aa44ff;
+}
+body{background:var(--bg);color:var(--tx);font-family:'Courier New',monospace;font-size:11px;overflow:hidden;height:100vh;display:flex;flex-direction:column;user-select:none}
+
+/* TOPBAR */
+#top{height:40px;background:var(--p1);border-bottom:1px solid var(--b1);display:flex;align-items:center;padding:0 8px;gap:4px;flex-shrink:0;box-shadow:0 2px 14px #0009}
+#logo{font-size:12px;font-weight:bold;color:var(--ac);letter-spacing:3px;margin-right:8px;white-space:nowrap;flex-shrink:0;transition:text-shadow .2s}
+#logo:hover{text-shadow:0 0 20px var(--ac),0 0 40px var(--ac)55}
+.sep{width:1px;height:20px;background:var(--b2);margin:0 1px;flex-shrink:0}
+.tb{background:var(--p2);border:1px solid var(--b2);color:var(--tx);padding:3px 7px;cursor:pointer;border-radius:3px;font-size:9px;font-family:'Courier New',monospace;transition:all .1s;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:3px}
+.tb:hover{border-color:var(--ac);color:var(--ac)}
+.tb.on{background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold}
+.tb.part-on{background:var(--a2);color:#000;border-color:var(--a2);font-weight:bold}
+.tb.rec{border-color:var(--rd);color:var(--rd)}.tb.rec:hover{background:var(--rd);color:#fff}
+/* QUALITY PICKER */
+#rec-quality{
+  background:var(--p2);border:1px solid var(--b2);color:var(--ac);
+  padding:3px 5px;font-family:'Courier New',monospace;font-size:9px;
+  border-radius:3px;cursor:pointer;height:28px;flex-shrink:0;
+  -webkit-appearance:none;text-align:center;
+  transition:border-color .12s;
+}
+#rec-quality:hover{border-color:var(--ac)}
+#rec-quality:disabled{opacity:.4;cursor:default}
+
+.tb.grn{border-color:var(--gn);color:var(--gn)}
+.tb.pur{border-color:var(--pu);color:var(--pu)}
+#stat{margin-left:auto;font-size:9px;color:var(--t2);max-width:280px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#rdot{width:6px;height:6px;border-radius:50%;background:var(--rd);display:none;animation:bl .9s infinite;flex-shrink:0}
+@keyframes bl{50%{opacity:0}}
+
+/* LAYOUT */
+#main{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* LEFT */
+#left{width:190px;min-width:120px;max-width:420px;background:var(--p1);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.ph{padding:5px 8px;font-size:8px;letter-spacing:2px;color:var(--t2);border-bottom:1px solid var(--b1);text-transform:uppercase;flex-shrink:0}
+#slist{flex:1;overflow-y:auto;min-height:104px}
+.si{padding:4px 7px;cursor:pointer;display:flex;align-items:center;gap:5px;border-left:2px solid transparent;transition:all .09s;border-bottom:1px solid #0003}
+.si:hover{background:var(--p2)}.si.sel{background:var(--p3);border-left-color:var(--ac);color:var(--ac)}
+.si.part-sel{background:var(--p3);border-left-color:var(--a2);color:var(--a2)}
+.si-i{font-size:10px;flex-shrink:0}.si-n{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* ADD DROPDOWN */
+#add-drop{
+  position:absolute;bottom:100%;left:0;right:0;
+  background:var(--p1);border:1px solid var(--b2);border-radius:6px 6px 0 0;
+  z-index:30;display:none;overflow-y:auto;max-height:70vh;
+  box-shadow:0 -8px 24px #0009;
+}
+#add-drop.show{display:block}
+.add-cat{padding:5px 8px;font-size:8px;letter-spacing:2px;color:var(--t2);
+  text-transform:uppercase;border-bottom:1px solid var(--b1);
+  background:var(--p2);cursor:pointer;display:flex;align-items:center;
+  justify-content:space-between;user-select:none}
+.add-cat:hover{color:var(--ac)}
+.add-cat .cc{font-size:8px;color:var(--t2);transition:transform .15s}
+.add-cat.collapsed .cc{transform:rotate(-90deg)}
+.add-cat-body{padding:5px 6px;border-bottom:1px solid var(--b1)}
+.add-cat-body.hidden{display:none}
+.add-g2{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:2px}
+/* bottom bar */
+#left-bottom{display:flex;flex-direction:column;gap:4px;padding:6px;border-top:1px solid var(--b1);flex-shrink:0;position:relative}
+.unite-btn{background:var(--p2);border:1px solid var(--pu);color:var(--pu);padding:5px 8px;cursor:pointer;border-radius:4px;font-size:9px;font-family:'Courier New',monospace;width:100%;text-align:left;transition:all .1s}
+.unite-btn:hover{background:var(--pu);color:#fff}
+.add-main-btn{background:var(--ac);color:#000;border:none;padding:6px 8px;cursor:pointer;border-radius:4px;font-size:10px;font-family:'Courier New',monospace;font-weight:bold;width:100%;text-align:center;transition:all .1s;letter-spacing:.5px}
+.add-main-btn:hover{background:#00e8ff}
+.add-main-btn.open{background:var(--rd);color:#fff}
+
+#apanel{padding:6px;border-top:1px solid var(--b1);overflow-y:auto;flex-shrink:0;max-height:54vh}
+.gl{font-size:7px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;padding:3px 0 2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:2px}
+.ab{background:var(--p2);border:1px solid var(--b2);color:var(--tx);padding:4px 4px;cursor:pointer;border-radius:2px;font-size:9px;font-family:'Courier New',monospace;text-align:left;transition:all .1s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ab:hover{border-color:var(--ac);color:var(--ac)}
+.ab.full{grid-column:1/-1}
+.ab.rd:hover{border-color:var(--rd);color:var(--rd)}
+.ab.note{color:var(--t3);cursor:default;font-size:8px;border-style:dashed}
+.isep{height:1px;background:var(--b1);margin:3px 0}
+
+/* VIEWPORT */
+#vw{flex:1;position:relative;overflow:hidden;background:#12151c}
+#cv{width:100%;height:100%;display:block}
+#vinfo{position:absolute;top:7px;left:7px;pointer-events:none;display:flex;flex-direction:column;gap:3px}
+.vt{background:#00000088;padding:2px 7px;border-radius:2px;font-size:9px;color:var(--t2);border:1px solid var(--b1);backdrop-filter:blur(3px)}
+#cbadge{position:absolute;top:7px;right:7px;background:#000b;border:1px solid var(--a2);color:var(--a2);padding:3px 9px;font-size:9px;border-radius:2px;display:none}
+#lov{position:absolute;inset:0;background:#07080bcc;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;font-size:12px;color:var(--ac);pointer-events:none;z-index:10}
+.spin{width:28px;height:28px;border:2px solid var(--b2);border-top-color:var(--ac);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* RIGHT */
+#right{width:205px;min-width:140px;max-width:480px;background:var(--p1);border-left:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden}
+.pg{padding:7px;border-bottom:1px solid var(--b1)}
+.pl{font-size:8px;color:var(--t2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px}
+.pr{display:flex;align-items:center;gap:3px;margin-bottom:3px}
+.pa{font-size:9px;color:var(--t2);width:11px;flex-shrink:0}
+.pi{flex:1;background:var(--p2);border:1px solid var(--b1);color:var(--tx);padding:2px 4px;font-size:9px;font-family:'Courier New',monospace;border-radius:2px;width:0;min-width:0}
+.pi:focus{outline:none;border-color:var(--ac)}
+.pif{width:100%;background:var(--p2);border:1px solid var(--b1);color:var(--tx);padding:2px 4px;font-size:9px;font-family:'Courier New',monospace;border-radius:2px}
+.pif:focus{outline:none;border-color:var(--ac)}
+.sm{background:var(--p2);border:1px solid var(--b2);color:var(--tx);padding:3px 5px;cursor:pointer;border-radius:2px;font-size:9px;font-family:'Courier New',monospace;width:100%;text-align:left;margin-top:2px;transition:all .1s}
+.sm:hover{border-color:var(--ac);color:var(--ac)}
+.sw{width:16px;height:16px;border-radius:2px;cursor:pointer;border:1px solid #0003;transition:transform .1s}
+.sw:hover{transform:scale(1.25);box-shadow:0 0 5px #fff3}
+.be{padding:2px 3px;cursor:pointer;font-size:9px;color:var(--t2);border-radius:2px;transition:all .1s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.be:hover{color:var(--ac);background:var(--p2)}.be.bs{color:var(--ac);background:var(--p3)}
+#nosel{padding:12px 8px;color:var(--t2);font-size:9px;line-height:1.8}
+
+/* TIMELINE */
+#tl{height:150px;min-height:60px;max-height:50vh;background:var(--p1);border-top:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0}
+#tl-rh{height:5px;cursor:ns-resize;background:transparent;flex-shrink:0;position:relative;z-index:5;transition:background .15s}
+#tl-rh:hover,#tl-rh.dragging{background:var(--ac)44}
+#tl-rh::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:2px;border-radius:1px;background:var(--b2)}
+#tl-rh:hover::after,#tl-rh.dragging::after{background:var(--ac)}
+#tlc{height:28px;display:flex;align-items:center;padding:0 7px;gap:5px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.pb{background:none;border:1px solid var(--b2);color:var(--tx);width:22px;height:20px;cursor:pointer;border-radius:2px;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .1s;flex-shrink:0}
+.pb:hover{border-color:var(--ac);color:var(--ac)}.pb.on{background:var(--ac);color:#000}
+#fctr{font-size:10px;color:var(--ac);min-width:58px;font-family:'Courier New',monospace}
+.lb{font-size:8px;color:var(--t2);flex-shrink:0}
+select.ts{background:var(--p2);border:1px solid var(--b2);color:var(--tx);padding:1px 3px;font-family:'Courier New',monospace;font-size:8px;border-radius:2px}
+input.tn{background:var(--p2);border:1px solid var(--b2);color:var(--ac);padding:1px 3px;font-family:'Courier New',monospace;font-size:8px;width:42px;border-radius:2px}
+#tlcanvas{flex:1;cursor:crosshair;display:block;width:100%}
+
+/* RENDER MODAL */
+/* EXPORT MODAL */
+#emodal{position:fixed;inset:0;background:#000b;z-index:101;display:none;align-items:center;justify-content:center}
+#emodal.show{display:flex}
+#ebox{background:var(--p1);border:1px solid var(--b2);border-radius:6px;padding:20px;width:440px;max-width:96vw}
+.etitle{font-size:14px;color:var(--a3);letter-spacing:2px;font-weight:bold;margin-bottom:14px}
+.erow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.elbl{font-size:9px;color:var(--t2);width:90px;flex-shrink:0}
+.einp{flex:1;background:var(--p2);border:1px solid var(--b1);color:var(--tx);padding:4px 7px;font-size:9px;font-family:'Courier New',monospace;border-radius:3px}
+.einp:focus{outline:none;border-color:var(--a3)}
+.efmt-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:10px 0}
+.efmt-btn{background:var(--p2);border:2px solid var(--b2);color:var(--t2);padding:10px 8px;cursor:pointer;border-radius:5px;font-size:11px;font-family:'Courier New',monospace;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.efmt-btn:hover{border-color:var(--a3);color:var(--a3)}
+.efmt-btn.eon{border-color:var(--a3);color:var(--a3);background:var(--a3)18}
+.efmt-btn .efmt-ico{font-size:18px}
+.efmt-btn .efmt-ext{font-size:10px;font-weight:bold}
+.efmt-btn .efmt-desc{font-size:8px;color:var(--t2);line-height:1.3}
+.eopt-sec{border-top:1px solid var(--b1);padding-top:10px;margin-top:4px}
+.eopt-lbl{font-size:8px;color:var(--t2);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px}
+.eprog{width:100%;height:4px;background:var(--b1);border-radius:2px;margin:8px 0;display:none}
+.eprog-bar{height:100%;background:var(--a3);border-radius:2px;width:0;transition:width .3s}
+.estat{font-size:9px;color:var(--t2);margin-bottom:8px;min-height:14px}
+.ebtns{display:flex;gap:6px;justify-content:flex-end;margin-top:12px}
+.ebtn{background:var(--p2);border:1px solid var(--b2);color:var(--tx);padding:6px 12px;cursor:pointer;border-radius:4px;font-size:10px;font-family:'Courier New',monospace;transition:all .1s}
+.ebtn:hover{border-color:var(--a3);color:var(--a3)}
+.ebtn.eprimary{border-color:var(--a3);color:var(--a3)}.ebtn.eprimary:hover{background:var(--a3);color:#000}
+
+#rmodal{position:fixed;inset:0;background:#000b;z-index:100;display:none;align-items:center;justify-content:center}
+#rbox{background:var(--p1);border:1px solid var(--b2);border-radius:4px;padding:16px;width:430px;max-width:96vw}
+#rprev{width:100%;border-radius:3px;border:1px solid var(--b1);margin-bottom:8px;display:none;max-height:250px;object-fit:contain}
+.rr{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.rl{font-size:9px;color:var(--t2);width:80px;flex-shrink:0}
+.ri{flex:1;background:var(--p2);border:1px solid var(--b1);color:var(--tx);padding:3px 5px;font-size:9px;font-family:'Courier New',monospace;border-radius:2px}
+.ri:focus{outline:none;border-color:var(--ac)}
+.rb2{background:var(--p2);border:1px solid var(--b2);color:var(--tx);padding:5px 10px;cursor:pointer;border-radius:3px;font-size:10px;font-family:'Courier New',monospace;transition:all .1s}
+.rb2:hover{border-color:var(--ac);color:var(--ac)}.rb2.ok{border-color:var(--gn);color:var(--gn)}.rb2.ok:hover{background:var(--gn);color:#000}
+
+#dropov{position:fixed;inset:0;background:#00c8f008;border:2px dashed var(--ac);display:none;align-items:center;justify-content:center;font-size:16px;color:var(--ac);pointer-events:none;z-index:999;letter-spacing:2px}
+#dropov.show{display:flex}
+/* UNITE */
+#unite-overlay{position:absolute;inset:0;background:#bb44ff0a;
+  border:2px dashed #bb44ff88;display:none;align-items:center;
+  justify-content:center;pointer-events:none;z-index:15;flex-direction:column;gap:8px}
+#unite-overlay.show{display:flex}
+.unite-msg{background:#000c;border:1px solid #bb44ff;color:#bb44ff;
+  padding:8px 18px;border-radius:4px;font-size:11px;letter-spacing:1.5px;
+  backdrop-filter:blur(4px);text-align:center}
+.si.united{border-left-color:#bb44ff!important;background:rgba(187,68,255,.08)!important}
+.si.united .si-n{color:#bb44ff}
+
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:var(--p1)}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+/* HELP MODAL */
+#help-modal{position:fixed;inset:0;background:#000b;z-index:200;display:none;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto}
+#help-modal.show{display:flex}
+#help-box{background:var(--p1);border:1px solid var(--b2);border-radius:6px;width:720px;max-width:96vw;display:flex;flex-direction:column;max-height:85vh;overflow:hidden;margin-bottom:40px}
+#help-topbar{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--b1);flex-shrink:0;gap:10px}
+#help-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;color:var(--ac);letter-spacing:2px;flex:1}
+#help-search{flex:1;background:var(--p2);border:1px solid var(--b1);color:var(--tx);padding:5px 10px;font-size:10px;font-family:'Courier New',monospace;border-radius:4px;max-width:220px}
+#help-search:focus{outline:none;border-color:var(--ac)}
+#help-close{background:none;border:1px solid var(--b2);color:var(--t2);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#help-close:hover{border-color:var(--rd);color:var(--rd)}
+#help-main{display:flex;flex:1;overflow:hidden;min-height:0}
+#help-cats{width:160px;border-right:1px solid var(--b1);overflow-y:auto;flex-shrink:0;padding:8px 0}
+.hcat{padding:7px 12px;cursor:pointer;font-size:10px;color:var(--t2);border-left:2px solid transparent;transition:all .1s;letter-spacing:.5px}
+.hcat:hover{color:var(--tx);background:var(--p2)}
+.hcat.active{color:var(--ac);border-left-color:var(--ac);background:var(--p3)}
+#help-content{flex:1;overflow-y:auto;padding:16px}
+.htopic{margin-bottom:18px;background:var(--p2);border:1px solid var(--b1);border-radius:5px;overflow:hidden}
+.htopic-hd{padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.htopic-ico{font-size:14px;flex-shrink:0}
+.htopic-name{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;color:var(--tx);flex:1}
+.htopic-arrow{font-size:10px;color:var(--t2);transition:transform .2s}
+.htopic.open .htopic-arrow{transform:rotate(90deg)}
+.htopic-body{display:none;padding:0 12px 12px;border-top:1px solid var(--b1)}
+.htopic.open .htopic-body{display:block}
+.hstep{display:flex;gap:8px;align-items:flex-start;margin-top:8px}
+.hstep-num{width:18px;height:18px;border-radius:50%;background:var(--ac);color:#000;font-size:9px;font-weight:bold;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-family:'Rajdhani',sans-serif}
+.hstep-txt{font-size:10px;color:var(--tx);line-height:1.6;flex:1}
+.hkey{display:inline-block;background:var(--p3);border:1px solid var(--b2);border-radius:3px;padding:1px 5px;font-size:9px;color:var(--ac);font-family:'Courier New',monospace;margin:0 2px}
+.htip{background:var(--ac)11;border-left:3px solid var(--ac);padding:6px 10px;margin-top:8px;font-size:9px;color:var(--t2);line-height:1.6;border-radius:0 3px 3px 0}
+.htip b{color:var(--ac)}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.hcard{background:var(--p3);border:1px solid var(--b1);border-radius:4px;padding:7px 9px}
+.hcard-k{font-size:9px;font-weight:bold;color:var(--a2);margin-bottom:3px}
+.hcard-v{font-size:9px;color:var(--t2);line-height:1.5}
+#help-no-results{display:none;padding:30px;text-align:center;color:var(--t2);font-size:11px}
+
+/* PHYSICS */
+.phys-radio{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+.pr-btn{flex:1;background:var(--p2);border:1px solid var(--b2);color:var(--t2);padding:4px 4px;cursor:pointer;border-radius:2px;font-size:9px;font-family:'Courier New',monospace;text-align:center;transition:all .1s}
+.pr-btn:hover{border-color:var(--ac);color:var(--ac)}
+.pr-btn.pon.particle{background:#f0900033;border-color:#f09000;color:#f09000}
+.pr-btn.pon.fluid{background:#00c8f033;border-color:#00c8f0;color:#00c8f0}
+.pr-btn.pon.none2{background:var(--p3);border-color:var(--b2);color:var(--tx)}
+.phys-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.phys-lbl{font-size:9px;color:var(--t2);width:70px;flex-shrink:0}
+.phys-inp{flex:1;background:var(--p2);border:1px solid var(--b1);color:var(--tx);padding:2px 4px;font-size:9px;font-family:'Courier New',monospace;border-radius:2px}
+.phys-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8px;font-weight:bold;letter-spacing:1px;margin-bottom:6px}
+.pb-part{background:#f0900022;color:#f09000;border:1px solid #f09000}
+.pb-fluid{background:#00c8f022;color:#00c8f0;border:1px solid #00c8f0}
+.opq-btn{background:var(--p2);border:1px solid var(--b2);color:var(--t2);padding:2px 5px;cursor:pointer;border-radius:2px;font-size:8px;font-family:'Courier New',monospace;transition:all .1s}
+.opq-btn:hover{border-color:var(--ac);color:var(--ac)}
+/* LASER */
+#laser-pick-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:#000c;border:1px solid var(--ac);color:var(--ac);padding:10px 20px;
+  border-radius:4px;font-size:11px;letter-spacing:2px;pointer-events:none;
+  display:none;text-align:center;z-index:20;backdrop-filter:blur(4px)}
+.lz-type{display:flex;gap:3px;margin-bottom:5px}
+.lz-tb{flex:1;background:var(--p2);border:1px solid var(--b2);color:var(--t2);
+  padding:3px 4px;cursor:pointer;border-radius:2px;font-size:9px;
+  font-family:'Courier New',monospace;text-align:center;transition:all .1s}
+.lz-tb:hover{border-color:var(--ac);color:var(--ac)}
+.lz-tb.lzon{background:var(--ac);color:#000;border-color:var(--ac);font-weight:bold}
+.lz-row{display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.lz-lbl{font-size:9px;color:var(--t2);width:74px;flex-shrink:0}
+.lz-inp{flex:1;background:var(--p2);border:1px solid var(--b1);color:var(--tx);
+  padding:2px 4px;font-size:9px;font-family:'Courier New',monospace;border-radius:2px}
+.lz-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--b2);flex-shrink:0}
+.lz-dot.set{border-color:var(--gn);background:var(--gn)}
+
+
+
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="top">
+  <span id="logo" onclick="PA.openHelp()" title="Help &amp; Documentation" style="cursor:pointer">&#x2B21; PRUSIAN ANIMATOR</span>
+  <div class="sep"></div>
+  <button class="tb on" id="btn-tr" onclick="PA.setMode('translate')">&#x2194; MOVE <small style="opacity:.5">G</small></button>
+  <button class="tb" id="btn-ro" onclick="PA.setMode('rotate')">&#x21BB; ROT <small style="opacity:.5">R</small></button>
+  <button class="tb" id="btn-sc" onclick="PA.setMode('scale')">&#x2922; SCALE <small style="opacity:.5">S</small></button>
+  <div class="sep"></div>
+  <button class="tb" id="btn-part" onclick="PA.togglePartMode()" title="Toggle between selecting whole model vs individual mesh parts">&#x25A4; PART SELECT</button>
+  <div class="sep"></div>
+  <button class="tb" onclick="PA.addCamera()">&#x1F4F7; CAMERA</button>
+  <button class="tb" id="btn-cv" onclick="PA.toggleCamView()">&#x1F441; CAM VIEW</button>
+  <div class="sep"></div>
+  <button class="tb" onclick="PA.addKF()">&#x25C6; KEY <small style="opacity:.5">K</small></button>
+  <div class="sep"></div>
+  <button class="tb pur" onclick="PA.openRender()">&#x2588; RENDER</button>
+  <div class="sep"></div>
+  <select id="rec-quality" title="Video quality">
+    <option value="144">144p</option>
+    <option value="240">240p</option>
+    <option value="420">420p</option>
+    <option value="720" selected>720p</option>
+    <option value="1080">1080p</option>
+    <option value="1440">2K</option>
+    <option value="2160">4K</option>
+    <option value="4320">8K</option>
+    <option value="8640">16K</option>
+  </select>
+  <button class="tb grn" id="btn-rec" onclick="PA.toggleRec()">&#x23FA; RECORD</button>
+  <div id="rdot"></div>
+  <div class="sep"></div>
+  <button class="tb" onclick="PA.deselectAll()" style="border-color:var(--rd);color:var(--rd)" title="Deselect all objects (Escape)">&#x2715; DESELECT</button>
+  <div id="stat">PrusianAnimator &#x2014; drag &amp; drop FBX / OBJ / GLTF / GLB / images</div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT: Scene + Add -->
+  <div id="left">
+    <!-- Hidden file inputs -->
+    <input type="file" id="i-fbx"  accept=".fbx,.FBX"           style="display:none">
+    <input type="file" id="i-obj"  accept=".obj,.OBJ"           style="display:none">
+    <input type="file" id="i-gltf" accept=".gltf,.glb,.GLTF,.GLB" style="display:none">
+    <input type="file" id="i-img"  accept="image/*"             style="display:none">
+    <input type="file" id="i-map"  accept=".glb,.gltf,.GLB,.GLTF" style="display:none">
+
+    <!-- Scene label + delete -->
+    <div class="ph" style="display:flex;align-items:center;justify-content:space-between;padding-right:5px">
+      <span>Objects</span>
+      <button onclick="PA.del()" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:9px;padding:0" title="Delete selected" onmouseover="this.style.color='var(--rd)'" onmouseout="this.style.color='var(--t2)'">&#x2297;</button>
+    </div>
+
+    <!-- Scene list — min 4 items visible -->
+    <div id="slist"><div class="si" style="font-style:italic;font-size:9px;padding:12px 8px;color:var(--t2)">Empty &#x2014; use ADD below</div></div>
+
+    <!-- Bottom bar: Unite + ADD -->
+    <div id="left-bottom">
+      <!-- ADD dropdown (opens upward) -->
+      <div id="add-drop">
+        <!-- Import -->
+        <div class="add-cat" onclick="toggleAddCat(this)"><span>&#x2B21; Import</span><span class="cc">▼</span></div>
+        <div class="add-cat-body">
+          <button class="ab full" onclick="document.getElementById('i-fbx').click()">&#x2B21; FBX</button>
+          <button class="ab full" onclick="document.getElementById('i-obj').click()">&#x25A3; OBJ</button>
+          <button class="ab full" onclick="document.getElementById('i-gltf').click()">&#x2726; GLTF / GLB</button>
+          <button class="ab full" onclick="document.getElementById('i-img').click()">&#x2B1C; Image (PNG/JPG)</button>
+          <button class="ab full" onclick="document.getElementById('i-map').click()" style="color:#44ccaa;border-color:#44ccaa">&#x1F5FA; Map (GLB/GLTF)</button>
+          <button class="ab full" onclick="PA.openExport();PA.closeAddDrop()" style="color:var(--a3);border-color:var(--a3)">&#x2193; Export Scene</button>
+          <button class="ab full note" title="Export to FBX/GLTF from Blender/3dsMax first">&#x26A0; .blend/.max &#x2192; FBX/GLTF</button>
+        </div>
+        <!-- Geometrical -->
+        <div class="add-cat" onclick="toggleAddCat(this)"><span>&#x2B1B; Geometrical</span><span class="cc">▼</span></div>
+        <div class="add-cat-body">
+          <div class="add-g2">
+            <button class="ab" onclick="PA.prim('box')">&#x2B1B; Box</button>
+            <button class="ab" onclick="PA.prim('sphere')">&#x2B24; Sphere</button>
+            <button class="ab" onclick="PA.prim('cylinder')">&#x2B2D; Cylinder</button>
+            <button class="ab" onclick="PA.prim('cone')">&#x25B2; Cone</button>
+            <button class="ab" onclick="PA.prim('torus')">&#x25EF; Torus</button>
+            <button class="ab" onclick="PA.prim('plane')">&#x25AD; Plane</button>
+            <button class="ab" onclick="PA.prim('capsule')">&#x1F48A; Capsule</button>
+            <button class="ab" onclick="PA.prim('ring')">&#x2299; Ring</button>
+            <button class="ab" onclick="PA.prim('torusknot')">&#x2726; TKnot</button>
+            <button class="ab" onclick="PA.prim('icosahedron')">&#x2B21; Icosa</button>
+            <button class="ab" onclick="PA.prim('octahedron')">&#x25C6; Octa</button>
+            <button class="ab" onclick="PA.prim('tetrahedron')">&#x25B3; Tetra</button>
+          </div>
+        </div>
+        <!-- Lights -->
+        <div class="add-cat" onclick="toggleAddCat(this)"><span>&#x1F4A1; Lights</span><span class="cc">▼</span></div>
+        <div class="add-cat-body">
+          <div class="add-g2">
+            <button class="ab" onclick="PA.light('point')">&#x1F4A1; Point</button>
+            <button class="ab" onclick="PA.light('spot')">&#x1F526; Spot</button>
+            <button class="ab" onclick="PA.light('directional')">&#x2600; Direct.</button>
+            <button class="ab" onclick="PA.light('hemisphere')">&#x1F313; Hemi</button>
+            <button class="ab" onclick="PA.light('ambient')">&#x25CB; Ambient</button>
+            <button class="ab" onclick="PA.light('area')">&#x2B1C; Area</button>
+          </div>
+          <button class="ab full" onclick="PA.startLaser();PA.closeAddDrop()" style="border-color:var(--rd);color:var(--rd);margin-top:2px">&#x2605; Add Laser</button>
+        </div>
+      </div>
+
+      <!-- Unite Objects -->
+      <button class="unite-btn" onclick="PA.startUnite()">&#x229E; Unite Objects</button>
+      <!-- ADD trigger -->
+      <button class="add-main-btn" id="btn-add-drop" onclick="PA.toggleAddDrop()">&#x2795; ADD</button>
+    </div>
+  </div>
+
+  <div class="resize-handle" id="rh-left" title="Drag to resize"></div>
+
+  <!-- VIEWPORT -->
+  <div id="vw">
+    <canvas id="cv"></canvas>
+    <div id="vinfo">
+      <div class="vt" id="vtmode">MODE: TRANSLATE</div>
+      <div class="vt" id="vtsel">NOTHING SELECTED</div>
+      <div class="vt" id="vtpart" style="display:none;color:var(--a2)">PART SELECT: ON</div>
+    </div>
+    <div id="cbadge">&#x1F4F7; CAMERA VIEW</div>
+    <div id="laser-pick-overlay">&#x2605; CLICK TO SET POINT <span id="laser-pick-label">A</span></div>
+    <div id="lov"><div class="spin"></div><div id="ltxt">Loading&#x2026;</div></div>
+  </div>
+
+  <div class="resize-handle" id="rh-right" title="Drag to resize"></div>
+
+  <!-- RIGHT: Properties -->
+  <div id="right">
+    <div class="ph">Properties</div>
+    <div id="nosel">Select an object.<br><br><span style="color:var(--t3)">G=move R=rotate S=scale<br>K=keyframe SPACE=play<br>F=focus DEL=delete<br>&#x25A4; PART SELECT = pick<br>individual mesh parts</span></div>
+    <div id="props" style="display:none">
+
+      <!-- Name -->
+      <div class="pg"><div class="pl">Name</div><input class="pif" id="p-name" onchange="PA.rename(this.value)"></div>
+
+      <!-- Transform -->
+      <div class="pg">
+        <div class="pl">Position</div>
+        <div class="pr"><span class="pa" style="color:#ff5566">X</span><input class="pi" id="px" type="number" step="0.1" onchange="PA.prop(this.id,+this.value)"></div>
+        <div class="pr"><span class="pa" style="color:#44ee77">Y</span><input class="pi" id="py" type="number" step="0.1" onchange="PA.prop(this.id,+this.value)"></div>
+        <div class="pr"><span class="pa" style="color:#4488ff">Z</span><input class="pi" id="pz" type="number" step="0.1" onchange="PA.prop(this.id,+this.value)"></div>
+      </div>
+      <div class="pg">
+        <div class="pl">Rotation &deg;</div>
+        <div class="pr"><span class="pa" style="color:#ff5566">X</span><input class="pi" id="rx" type="number" step="1" onchange="PA.prop(this.id,+this.value)"></div>
+        <div class="pr"><span class="pa" style="color:#44ee77">Y</span><input class="pi" id="ry" type="number" step="1" onchange="PA.prop(this.id,+this.value)"></div>
+        <div class="pr"><span class="pa" style="color:#4488ff">Z</span><input class="pi" id="rz" type="number" step="1" onchange="PA.prop(this.id,+this.value)"></div>
+      </div>
+      <div class="pg">
+        <div class="pl">Scale</div>
+        <div class="pr"><span class="pa" style="color:#ff5566">X</span><input class="pi" id="sx" type="number" step="0.1" onchange="PA.prop(this.id,+this.value)"></div>
+        <div class="pr"><span class="pa" style="color:#44ee77">Y</span><input class="pi" id="sy" type="number" step="0.1" onchange="PA.prop(this.id,+this.value)"></div>
+        <div class="pr"><span class="pa" style="color:#4488ff">Z</span><input class="pi" id="sz" type="number" step="0.1" onchange="PA.prop(this.id,+this.value)"></div>
+      </div>
+
+      <!-- Color -->
+      <div class="pg" id="cp-col">
+        <div class="pl">Color <span id="col-part-lbl" style="color:var(--a2);display:none">(PART)</span></div>
+        <div class="pr" style="gap:5px">
+          <input type="color" id="col-pick" value="#3355cc" style="width:34px;height:22px;border:1px solid var(--b2);cursor:pointer;border-radius:2px;padding:1px" oninput="PA.color(this.value)">
+          <span style="font-size:9px;color:var(--t2)">Mesh color</span>
+        </div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:5px">
+          <div class="sw" style="background:#ff3c4e" onclick="PA.color('#ff3c4e')"></div>
+          <div class="sw" style="background:#f09000" onclick="PA.color('#f09000')"></div>
+          <div class="sw" style="background:#f0e000" onclick="PA.color('#f0e000')"></div>
+          <div class="sw" style="background:#44ef88" onclick="PA.color('#44ef88')"></div>
+          <div class="sw" style="background:#00c8f0" onclick="PA.color('#00c8f0')"></div>
+          <div class="sw" style="background:#4488ff" onclick="PA.color('#4488ff')"></div>
+          <div class="sw" style="background:#aa44ff" onclick="PA.color('#aa44ff')"></div>
+          <div class="sw" style="background:#ff44aa" onclick="PA.color('#ff44aa')"></div>
+          <div class="sw" style="background:#fff"    onclick="PA.color('#ffffff')"></div>
+          <div class="sw" style="background:#888"    onclick="PA.color('#888888')"></div>
+          <div class="sw" style="background:#222"    onclick="PA.color('#222222')"></div>
+          <div class="sw" style="background:#6b3a10" onclick="PA.color('#6b3a10')"></div>
+        </div>
+        <!-- Transparency -->
+        <div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
+          <div class="pl" style="margin-bottom:5px">Transparency</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="range" id="opac-slider" min="0" max="100" value="100"
+              style="flex:1;accent-color:var(--ac);cursor:pointer;height:4px"
+              oninput="PA.setOpacity(this.value/100)">
+            <span id="opac-val" style="font-size:9px;color:var(--ac);min-width:30px;text-align:right;font-family:'Courier New',monospace">100%</span>
+          </div>
+          <div style="display:flex;gap:3px;margin-top:5px;flex-wrap:wrap">
+            <button class="opq-btn" onclick="PA.setOpacity(1)">100%</button>
+            <button class="opq-btn" onclick="PA.setOpacity(0.75)">75%</button>
+            <button class="opq-btn" onclick="PA.setOpacity(0.5)">50%</button>
+            <button class="opq-btn" onclick="PA.setOpacity(0.25)">25%</button>
+            <button class="opq-btn" onclick="PA.setOpacity(0.1)">10%</button>
+            <button class="opq-btn" onclick="PA.setOpacity(0)">0%</button>
+          </div>
+          <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:9px;color:var(--t2);width:70px;flex-shrink:0">Wireframe</span>
+            <input type="checkbox" id="chk-wire" onchange="PA.setWireframe(this.checked)" style="accent-color:var(--ac)">
+          </div>
+          <div style="margin-top:3px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:9px;color:var(--t2);width:70px;flex-shrink:0">Double Side</span>
+            <input type="checkbox" id="chk-dside" onchange="PA.setDoubleSide(this.checked)" style="accent-color:var(--ac)">
+          </div>
+        </div>
+        <button class="sm" onclick="PA.resetColor()" style="margin-top:6px;color:var(--t2)">&#x21BA; Restore Original Colors</button>
+        <!-- Texture section -->
+        <div style="margin-top:8px;border-top:1px solid var(--b1);padding-top:7px">
+          <div class="pl" style="margin-bottom:5px">Texture (PNG / JPG)</div>
+          <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
+            <button class="sm" onclick="document.getElementById('i-tex').click()" style="flex:1;margin-top:0;text-align:center;color:var(--ac);border-color:var(--ac)">&#x1F4C2; Load Texture</button>
+            <button class="sm" onclick="PA.clearTexture()" style="flex:1;margin-top:0;text-align:center;color:var(--rd);border-color:var(--rd)">&#x2715; Remove</button>
+          </div>
+          <div id="tex-preview-wrap" style="display:none;margin-top:4px">
+            <img id="tex-preview" style="width:100%;height:60px;object-fit:cover;border-radius:3px;border:1px solid var(--b2)">
+            <div id="tex-name" style="font-size:8px;color:var(--t2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+          </div>
+          <input type="file" id="i-tex" accept="image/png,image/jpeg,image/jpg,image/webp" style="display:none">
+          <div style="margin-top:5px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:9px;color:var(--t2);width:70px;flex-shrink:0">Repeat X</span>
+            <input class="pi" id="tex-rx" type="number" value="1" min="0.1" max="100" step="0.5" style="flex:1" onchange="PA.updateTexRepeat()">
+          </div>
+          <div style="margin-top:3px;display:flex;align-items:center;gap:5px">
+            <span style="font-size:9px;color:var(--t2);width:70px;flex-shrink:0">Repeat Y</span>
+            <input class="pi" id="tex-ry" type="number" value="1" min="0.1" max="100" step="0.5" style="flex:1" onchange="PA.updateTexRepeat()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mesh parts list (for imported models) -->
+      <div class="pg" id="cp-parts" style="display:none">
+        <div class="pl">Mesh Parts <span id="parts-count" style="color:var(--t3)"></span></div>
+        <div id="parts-list" style="max-height:110px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Light -->
+      <div class="pg" id="cp-light" style="display:none">
+        <div class="pl">Light Settings</div>
+        <div class="pr" style="gap:5px;margin-bottom:5px">
+          <input type="color" id="lc" value="#ffffff" style="width:34px;height:22px;border:1px solid var(--b2);cursor:pointer;border-radius:2px;padding:1px" oninput="PA.lightProp()">
+          <span style="font-size:9px;color:var(--t2)">Color</span>
+        </div>
+        <div class="pr"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Intensity</span><input class="pi" id="li" type="number" value="2" min="0" step="0.1" oninput="PA.lightProp()"></div>
+        <div class="pr" id="l-dist"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Distance</span><input class="pi" id="ld" type="number" value="20" min="0" step="1" oninput="PA.lightProp()"></div>
+        <div class="pr" id="l-ang" style="display:none"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Angle &deg;</span><input class="pi" id="la" type="number" value="30" min="1" max="89" step="1" oninput="PA.lightProp()"></div>
+        <div class="pr" id="l-pen" style="display:none"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Penumbra</span><input class="pi" id="lpen" type="number" value="0.2" min="0" max="1" step="0.05" oninput="PA.lightProp()"></div>
+        <div class="pr" id="l-sky" style="display:none"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Sky</span><input type="color" id="lsky" value="#4488ff" style="width:30px;height:18px;cursor:pointer;border-radius:2px;border:1px solid var(--b1)" oninput="PA.lightProp()"></div>
+        <div class="pr" id="l-gnd" style="display:none"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Ground</span><input type="color" id="lgnd" value="#442200" style="width:30px;height:18px;cursor:pointer;border-radius:2px;border:1px solid var(--b1)" oninput="PA.lightProp()"></div>
+        <div class="pr"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Shadows</span><input type="checkbox" id="lsh" onchange="PA.lightProp()" style="accent-color:var(--ac)"></div>
+        <div class="pr"><span style="font-size:9px;color:var(--t2);width:72px;flex-shrink:0">Helper</span><input type="checkbox" id="lhelp" checked onchange="PA.lightHelper()" style="accent-color:var(--ac)"></div>
+      </div>
+
+      <!-- Skeleton / Rigging -->
+      <div class="pg" id="cp-rig" style="display:none">
+        <div class="pl">Rig &amp; Skeleton <span id="bct" style="color:var(--t3)"></span></div>
+        <!-- Mode bar -->
+        <div class="rig-mode-bar" id="rig-mode-bar">
+          <button class="rig-mode-btn rmon" id="rm-pose" onclick="PA.setRigEditMode('pose')">POSE</button>
+          <button class="rig-mode-btn" id="rm-add"  onclick="PA.setRigEditMode('add')">+ BONE</button>
+          <button class="rig-mode-btn" id="rm-del"  onclick="PA.deleteSelBoneManual()" style="color:var(--rd);border-color:var(--rd)">DEL</button>
+        </div>
+        <!-- Tip -->
+        <div id="rig-tip" style="font-size:8px;color:var(--t2);margin-bottom:5px;line-height:1.5">
+          POSE: click bone → G/R/S to transform<br>+ BONE: click scene to place, click again to chain
+        </div>
+        <!-- Bone list (works for native FBX/GLTF bones AND manual bones) -->
+        <div id="bonelist" style="max-height:130px;overflow-y:auto"></div>
+        <div style="display:flex;gap:3px;margin-top:4px">
+          <button class="sm" id="skel-btn" onclick="PA.skelVis()" style="flex:1">Hide Skeleton</button>
+          <button class="sm" id="rig-hide-btn" onclick="PA.hideRig()" style="flex:1;color:var(--a2);border-color:var(--a2)">Hide Rig</button>
+        </div>
+        <!-- OBJ / no-skeleton notice + create rig button -->
+        <div id="no-skel-notice" style="display:none;margin-top:6px">
+          <div style="font-size:9px;color:var(--t2);margin-bottom:4px">No built-in skeleton.<br>Use + BONE to create a manual rig.</div>
+          <button class="sm" onclick="PA.setRigEditMode('add')" style="color:var(--pu);border-color:var(--pu)">&#x2295; Start Adding Bones</button>
+        </div>
+        <div id="animwrap" style="display:none;margin-top:4px">
+          <div class="pl" style="margin-top:2px">Animations</div>
+          <div id="animlist"></div>
+        </div>
+      </div>
+
+
+
+      <!-- Laser Properties -->
+      <div class="pg" id="cp-laser" style="display:none">
+        <div class="pl">&#x2605; Laser Settings</div>
+        <!-- Point indicators -->
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+          <span class="lz-dot" id="lz-dot-a"></span>
+          <span style="font-size:9px;color:var(--t2)">Point A</span>
+          <span class="lz-dot" id="lz-dot-b" style="margin-left:8px"></span>
+          <span style="font-size:9px;color:var(--t2)">Point B</span>
+        </div>
+        <button class="sm" id="lz-repick-btn" onclick="PA.repickLaser()" style="margin-bottom:6px;border-color:var(--ac);color:var(--ac)">&#x21BA; Re-pick A &rarr; B</button>
+        <!-- Type selector -->
+        <div class="lz-type">
+          <button class="lz-tb lzon" id="lzt-continuous" onclick="PA.setLaserType('continuous')">&#x2501; Continuous</button>
+          <button class="lz-tb" id="lzt-particle" onclick="PA.setLaserType('particle')">&#x2234; Particles</button>
+        </div>
+        <!-- Common props -->
+        <div class="lz-row"><span class="lz-lbl">Color</span>
+          <input type="color" id="lz-col" value="#ff0000" style="width:32px;height:20px;cursor:pointer;border-radius:2px;border:1px solid var(--b1)" oninput="PA.updateLaser()">
+          <div style="display:flex;gap:2px;flex-wrap:wrap;margin-left:2px">
+            <div class="sw" style="width:13px;height:13px;background:#ff0000" onclick="document.getElementById('lz-col').value='#ff0000';PA.updateLaser()"></div>
+            <div class="sw" style="width:13px;height:13px;background:#00ff88" onclick="document.getElementById('lz-col').value='#00ff88';PA.updateLaser()"></div>
+            <div class="sw" style="width:13px;height:13px;background:#00ccff" onclick="document.getElementById('lz-col').value='#00ccff';PA.updateLaser()"></div>
+            <div class="sw" style="width:13px;height:13px;background:#ff00ff" onclick="document.getElementById('lz-col').value='#ff00ff';PA.updateLaser()"></div>
+            <div class="sw" style="width:13px;height:13px;background:#ffff00" onclick="document.getElementById('lz-col').value='#ffff00';PA.updateLaser()"></div>
+            <div class="sw" style="width:13px;height:13px;background:#ffffff" onclick="document.getElementById('lz-col').value='#ffffff';PA.updateLaser()"></div>
+          </div>
+        </div>
+        <div class="lz-row"><span class="lz-lbl">Thickness</span>
+          <input class="lz-inp" id="lz-thick" type="range" min="1" max="20" value="3" oninput="PA.updateLaser();document.getElementById('lz-thick-val').textContent=this.value+'px'">
+          <span id="lz-thick-val" style="font-size:9px;color:var(--ac);min-width:28px">3px</span>
+        </div>
+        <div class="lz-row"><span class="lz-lbl">Glow Intensity</span>
+          <input class="lz-inp" id="lz-glow" type="range" min="0" max="10" value="4" step="0.5" oninput="PA.updateLaser()">
+        </div>
+        <!-- Particle props (shown only when type=particle) -->
+        <div id="lz-particle-cfg" style="display:none;margin-top:4px;border-top:1px solid var(--b1);padding-top:5px">
+          <div class="lz-row"><span class="lz-lbl">Particle Count</span>
+            <input class="lz-inp" id="lz-pcount" type="number" value="600" min="50" max="3000" step="50" onchange="PA.updateLaser()">
+          </div>
+          <div class="lz-row"><span class="lz-lbl">Speed</span>
+            <input class="lz-inp" id="lz-pspeed" type="number" value="2.5" min="0.1" max="20" step="0.1" onchange="PA.updateLaser()">
+          </div>
+          <div class="lz-row"><span class="lz-lbl">Lifetime (s)</span>
+            <input class="lz-inp" id="lz-plife" type="number" value="1.2" min="0.1" max="10" step="0.1" onchange="PA.updateLaser()">
+          </div>
+          <div class="lz-row"><span class="lz-lbl">Particle Size</span>
+            <input class="lz-inp" id="lz-psize" type="number" value="0.05" min="0.01" max="0.5" step="0.01" onchange="PA.updateLaser()">
+          </div>
+          <div class="lz-row"><span class="lz-lbl">Spread Radius</span>
+            <input class="lz-inp" id="lz-pspread" type="number" value="0.8" min="0.05" max="5" step="0.05" onchange="PA.updateLaser()">
+          </div>
+        </div>
+      </div>
+      <!-- Physics -->
+      <div class="pg" id="cp-phys" style="display:none">
+        <div class="pl">Physics Properties</div>
+        <div class="phys-radio">
+          <button class="pr-btn pon none2" id="phys-none" onclick="PA.setPhys('none')">&#x2715; None</button>
+          <button class="pr-btn" id="phys-particle" onclick="PA.setPhys('particle')">&#x2234; Particle</button>
+          <button class="pr-btn" id="phys-fluid" onclick="PA.setPhys('fluid')">&#x007E; Fluid</button>
+        </div>
+        <!-- Particle settings -->
+        <div id="phys-particle-cfg" style="display:none">
+          <div class="phys-badge pb-part">PARTICLE SIMULATION</div>
+          <div class="phys-row"><span class="phys-lbl">Count</span><input class="phys-inp" id="ph-count" type="number" value="800" min="50" max="3000" step="50" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Speed</span><input class="phys-inp" id="ph-speed" type="number" value="2" min="0.1" max="10" step="0.1" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Spread</span><input class="phys-inp" id="ph-spread" type="number" value="1.5" min="0.1" max="5" step="0.1" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Size</span><input class="phys-inp" id="ph-size" type="number" value="0.06" min="0.01" max="0.5" step="0.01" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Color</span><input type="color" id="ph-col" value="#f09000" style="width:30px;height:18px;cursor:pointer;border-radius:2px;border:1px solid var(--b1)" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Gravity</span><input class="phys-inp" id="ph-grav" type="number" value="-9.8" min="-20" max="20" step="0.5" onchange="PA.updatePhysConfig()"></div>
+        </div>
+        <!-- Fluid settings -->
+        <div id="phys-fluid-cfg" style="display:none">
+          <div class="phys-badge pb-fluid">FLUID SIMULATION</div>
+          <div class="phys-row"><span class="phys-lbl">Wave Amp.</span><input class="phys-inp" id="fl-amp" type="number" value="0.18" min="0.01" max="1" step="0.01" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Wave Speed</span><input class="phys-inp" id="fl-spd" type="number" value="1.4" min="0.1" max="6" step="0.1" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Wave Freq.</span><input class="phys-inp" id="fl-frq" type="number" value="2.2" min="0.1" max="10" step="0.1" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Opacity</span><input class="phys-inp" id="fl-opa" type="number" value="0.72" min="0.1" max="1" step="0.05" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Color</span><input type="color" id="fl-col" value="#00aaff" style="width:30px;height:18px;cursor:pointer;border-radius:2px;border:1px solid var(--b1)" onchange="PA.updatePhysConfig()"></div>
+          <div class="phys-row"><span class="phys-lbl">Foam</span><input type="checkbox" id="fl-foam" checked onchange="PA.updatePhysConfig()" style="accent-color:var(--ac)"></div>
+        </div>
+        <button class="sm" onclick="PA.clearPhys()" style="margin-top:4px;color:var(--rd)">&#x2715; Remove Simulation</button>
+      </div>
+      <!-- Keyframes -->
+      <div class="pg">
+        <div class="pl">Keyframes</div>
+        <button class="sm" onclick="PA.addKF()">&#x25C6; Add Keyframe (K)</button>
+        <button class="sm" onclick="PA.clearKF()">&#x2715; Clear This Object</button>
+        <div id="kfc" style="margin-top:4px;font-size:9px;color:var(--t2)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE -->
+<div id="tl">
+  <div id="tl-rh" title="Drag to resize timeline"></div>
+  <div id="tlc">
+    <button class="pb" onclick="PA.go(0)">&#x23EE;</button>
+    <button class="pb" onclick="PA.step(-1)">&#x25C1;</button>
+    <button class="pb" id="btn-play" onclick="PA.play()">&#x25B6;</button>
+    <button class="pb" onclick="PA.step(1)">&#x25B7;</button>
+    <button class="pb" onclick="PA.go(PA.totalF-1)">&#x23ED;</button>
+    <div class="sep"></div>
+    <span id="fctr">000/120</span>
+    <div class="sep"></div>
+    <span class="lb">FPS</span>
+    <select class="ts" onchange="PA.fps=+this.value"><option value="24">24</option><option value="30" selected>30</option><option value="60">60</option></select>
+    <div class="sep"></div>
+    <span class="lb">FRAMES</span>
+    <input type="number" class="tn" value="120" min="1" max="9999" onchange="PA.setTotal(+this.value)">
+    <div class="sep"></div>
+    <button class="pb" onclick="PA.addKF()" style="width:auto;padding:0 5px;font-size:9px">&#x25C6; KEY</button>
+    <button class="pb" onclick="PA.clearAllKF()" style="width:auto;padding:0 5px;font-size:9px">&#x2715; CLR</button>
+    <span class="lb" style="margin-left:3px">LOOP</span>
+    <input type="checkbox" id="chk-loop" checked style="accent-color:var(--ac)">
+  </div>
+  <canvas id="tlcanvas"></canvas>
+</div>
+
+<!-- RENDER MODAL -->
+<div id="rmodal" onclick="if(event.target===this)PA.closeRender()">
+  <div id="rbox">
+    <div style="font-size:13px;color:var(--ac);letter-spacing:2px;margin-bottom:12px;font-weight:bold">&#x2588; RENDER IMAGE</div>
+    <img id="rprev" alt="preview">
+    <div class="rr"><span class="rl">Width px</span><input class="ri" id="r-w" type="number" value="1920"></div>
+    <div class="rr"><span class="rl">Height px</span><input class="ri" id="r-h" type="number" value="1080"></div>
+    <div class="rr"><span class="rl">Camera</span><input type="checkbox" id="r-cam" checked style="accent-color:var(--ac)"><span style="font-size:9px;color:var(--t2);margin-left:4px">use render cam (uncheck = viewport)</span></div>
+    <div class="rr"><span class="rl">Transparent</span><input type="checkbox" id="r-alpha" style="accent-color:var(--ac)"></div>
+    <div class="rr"><span class="rl">Filename</span><input class="ri" id="r-fname" value="render"></div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:10px">
+      <button class="rb2" onclick="PA.closeRender()">Cancel</button>
+      <button class="rb2" onclick="PA.doRender()">&#x25B6; Preview</button>
+      <button class="rb2 ok" id="r-save" onclick="PA.saveRender()" style="display:none">&#x2193; Save PNG</button>
+    </div>
+  </div>
+</div>
+
+<div id="dropov">&#x2295; DROP TO IMPORT</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }     from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
+import { FBXLoader }         from 'three/addons/loaders/FBXLoader.js';
+import { OBJLoader }         from 'three/addons/loaders/OBJLoader.js';
+import { GLTFLoader }        from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader }       from 'three/addons/loaders/DRACOLoader.js';
+import { GLTFExporter }      from 'three/addons/exporters/GLTFExporter.js';
+import { OBJExporter }       from 'three/addons/exporters/OBJExporter.js';
+
+// ═══════════ STATE ═══════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const r2 = n => Math.round(n * 100) / 100;
+const COLORS = ['#00c8f0','#f09000','#ff3c4e','#44ef88','#aa44ff','#f0c000','#ff44aa','#44aaff'];
+
+let scene, viewCam, renderer, orbit, xform;
+let selEntry = null;      // selected scene-list entry (whole model/light/prim)
+let selMesh  = null;      // selected individual mesh (part-select mode) or same as selEntry.mesh
+let partMode = false;     // true = click selects individual sub-meshes
+let objects  = [];
+let objId    = 0;
+
+let renderCam = null, camHelper = null, camGrp = null;
+let isPlaying = false, isCamView = false, isRec = false;
+let curF = 0, totalF = 120, fps = 30, lastFT = 0;
+let mediaRec = null, recChunks = [];
+let clock;
+let tlC, tlX;
+let renderDataURL = null;
+let dropN = 0;
+let vpDown = false;
+let middleDown = false;   // true while middle mouse (wheel) is held
+
+
+// ═══════════ PHYSICS SIMULATION ══════════════════════════════
+const physMap = new Map(); // entry.id → { type, particles, fluid, cfg }
+
+function setPhys(type) {
+  if (!selEntry || selEntry.type === 'light' || selEntry.type === 'camera') return;
+
+  // clear old sim on this object first
+  clearPhysFor(selEntry);
+
+  // update UI buttons
+  ['none','particle','fluid'].forEach(t => {
+    const b = $('phys-' + t);
+    b.classList.toggle('pon', t === type);
+    b.classList.remove('particle','fluid','none2');
+    if (t === type) b.classList.add(t === 'none' ? 'none2' : t);
+  });
+  $('phys-particle-cfg').style.display = type === 'particle' ? 'block' : 'none';
+  $('phys-fluid-cfg').style.display    = type === 'fluid'    ? 'block' : 'none';
+
+  if (type === 'none') { physMap.delete(selEntry.id); return; }
+
+  const cfg = readPhysCfg(type);
+  const sim = { type, cfg };
+
+  if (type === 'particle') sim.system = createParticleSystem(selEntry.mesh, cfg);
+  if (type === 'fluid')    sim.surface = createFluidSurface(selEntry.mesh, cfg);
+
+  physMap.set(selEntry.id, sim);
+  selEntry._physType = type;
+  status('Physics: ' + type + ' simulation active on ' + selEntry.name);
+}
+
+function readPhysCfg(type) {
+  if (type === 'particle') return {
+    count:  parseInt($('ph-count').value)  || 800,
+    speed:  parseFloat($('ph-speed').value) || 2,
+    spread: parseFloat($('ph-spread').value)|| 1.5,
+    size:   parseFloat($('ph-size').value)  || 0.06,
+    color:  $('ph-col').value || '#f09000',
+    gravity:parseFloat($('ph-grav').value)  || -9.8,
+  };
+  return {
+    amp:   parseFloat($('fl-amp').value) || 0.18,
+    speed: parseFloat($('fl-spd').value) || 1.4,
+    freq:  parseFloat($('fl-frq').value) || 2.2,
+    opacity: parseFloat($('fl-opa').value) || 0.72,
+    color: $('fl-col').value || '#00aaff',
+    foam:  $('fl-foam').checked,
+  };
+}
+
+function updatePhysConfig() {
+  if (!selEntry) return;
+  const sim = physMap.get(selEntry.id); if (!sim) return;
+  sim.cfg = readPhysCfg(sim.type);
+  // Rebuild with new config
+  if (sim.type === 'particle') {
+    scene.remove(sim.system._points);
+    sim.system._points.geometry.dispose();
+    sim.system._points.material.dispose();
+    sim.system = createParticleSystem(selEntry.mesh, sim.cfg);
+  }
+  if (sim.type === 'fluid') {
+    scene.remove(sim.surface._mesh);
+    if (sim.surface._foam) scene.remove(sim.surface._foam);
+    sim.surface._mesh.geometry.dispose();
+    sim.surface._mesh.material.dispose();
+    sim.surface = createFluidSurface(selEntry.mesh, sim.cfg);
+  }
+}
+window._updatePhysConfig = updatePhysConfig;
+
+// ──── Particle System ────────────────────────────────────
+function createParticleSystem(parentMesh, cfg) {
+  const N    = cfg.count;
+  const geo  = new THREE.BufferGeometry();
+  const pos  = new Float32Array(N * 3);
+  const vel  = new Float32Array(N * 3); // velocity
+  const life = new Float32Array(N);     // lifetime 0..1
+
+  // Get emitter base position (bottom of bounding box)
+  const box = new THREE.Box3().setFromObject(parentMesh);
+  const center = box.getCenter(new THREE.Vector3());
+  const bottom = box.min.y;
+  const rx = (box.max.x - box.min.x) * 0.5;
+  const rz = (box.max.z - box.min.z) * 0.5;
+
+  const resetParticle = (i) => {
+    const theta = Math.random() * Math.PI * 2;
+    const r = Math.random();
+    pos[i*3]   = center.x + Math.cos(theta) * r * rx * cfg.spread;
+    pos[i*3+1] = bottom;
+    pos[i*3+2] = center.z + Math.sin(theta) * r * rz * cfg.spread;
+    vel[i*3]   = (Math.random() - 0.5) * 0.3;
+    vel[i*3+1] = -(Math.random() * 0.5 + 0.2) * cfg.speed * 0.5;
+    vel[i*3+2] = (Math.random() - 0.5) * 0.3;
+    life[i]    = Math.random();
+  };
+
+  for (let i = 0; i < N; i++) resetParticle(i);
+
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+
+  const mat = new THREE.PointsMaterial({
+    size: cfg.size,
+    color: new THREE.Color(cfg.color),
+    transparent: true,
+    opacity: 0.82,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    sizeAttenuation: true,
+  });
+
+  const points = new THREE.Points(geo, mat);
+  points.userData.isPhys = true;
+  scene.add(points);
+
+  return { _points: points, _pos: pos, _vel: vel, _life: life,
+           _resetFn: resetParticle, _N: N,
+           _box: box, _center: center.clone(), _bottom: bottom,
+           _rx: rx, _rz: rz };
+}
+
+function tickParticles(sim, dt) {
+  const { _pos: pos, _vel: vel, _life: life, _N: N, _resetFn: reset, _points: pts, _bottom: bottom } = sim;
+  const grav = (sim.cfg || {}).gravity ?? -9.8;
+  const attr = pts.geometry.attributes.position;
+
+  for (let i = 0; i < N; i++) {
+    life[i] -= dt * 0.7;
+    if (life[i] <= 0) { reset(i); life[i] = 0.8 + Math.random() * 0.2; }
+
+    vel[i*3+1] += grav * dt * 0.12; // gravity
+    pos[i*3]   += vel[i*3]   * dt;
+    pos[i*3+1] += vel[i*3+1] * dt;
+    pos[i*3+2] += vel[i*3+2] * dt;
+
+    // Floor bounce / reset deep below emitter
+    if (pos[i*3+1] < bottom - 6) reset(i);
+  }
+  attr.array.set(pos);
+  attr.needsUpdate = true;
+}
+
+// ──── Fluid Surface ──────────────────────────────────────
+function createFluidSurface(parentMesh, cfg) {
+  const box  = new THREE.Box3().setFromObject(parentMesh);
+  const size = box.getSize(new THREE.Vector3());
+  const cx   = (box.min.x + box.max.x) / 2;
+  const cz   = (box.min.z + box.max.z) / 2;
+  const W    = Math.max(size.x, 0.5) * 1.1;
+  const D    = Math.max(size.z, 0.5) * 1.1;
+  const SEG  = 64;
+
+  const geo = new THREE.PlaneGeometry(W, D, SEG, SEG);
+  geo.rotateX(-Math.PI / 2);
+  // Store original Y positions
+  const posAttr = geo.attributes.position;
+  const origY   = new Float32Array(posAttr.count);
+  for (let i = 0; i < posAttr.count; i++) origY[i] = posAttr.getY(i);
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(cfg.color),
+    transparent: true,
+    opacity: cfg.opacity,
+    roughness: 0.05,
+    metalness: 0.55,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(cx, box.min.y, cz);
+  mesh.userData.isPhys = true;
+  scene.add(mesh);
+
+  // Foam layer
+  let foamMesh = null;
+  if (cfg.foam) {
+    const fgeo = new THREE.PlaneGeometry(W, D, 16, 16);
+    fgeo.rotateX(-Math.PI / 2);
+    const fmat = new THREE.MeshStandardMaterial({
+      color: 0xffffff, transparent: true, opacity: 0.22,
+      roughness: 0.9, depthWrite: false,
+    });
+    foamMesh = new THREE.Mesh(fgeo, fmat);
+    foamMesh.position.set(cx, box.min.y + 0.01, cz);
+    foamMesh.userData.isPhys = true;
+    scene.add(foamMesh);
+  }
+
+  return { _mesh: mesh, _foam: foamMesh, _origY: origY, _geo: geo, _W: W, _D: D };
+}
+
+function tickFluid(sim, t) {
+  const { _mesh: mesh, _origY: origY, _geo: geo, cfg } = sim;
+  if (!mesh) return;
+  const amp   = (cfg || {}).amp   ?? 0.18;
+  const freq  = (cfg || {}).freq  ?? 2.2;
+  const speed = (cfg || {}).speed ?? 1.4;
+
+  const posAttr = geo.attributes.position;
+  for (let i = 0; i < posAttr.count; i++) {
+    const x = posAttr.getX(i);
+    const z = posAttr.getZ(i);
+    // Multi-wave: realistic ocean-like surface
+    const y = origY[i]
+      + amp * Math.sin(freq * x + speed * t)
+      + amp * 0.6 * Math.sin(freq * 1.6 * z + speed * 0.8 * t)
+      + amp * 0.3 * Math.sin(freq * 0.9 * (x + z) + speed * 1.2 * t)
+      + amp * 0.15 * Math.sin(freq * 2.5 * x - speed * 0.5 * t);
+    posAttr.setY(i, y);
+  }
+  posAttr.needsUpdate = true;
+  geo.computeVertexNormals();
+}
+
+// ──── Tick all physics ────────────────────────────────────
+let _physTime = 0;
+function tickPhysics(dt) {
+  _physTime += dt;
+  physMap.forEach((sim, id) => {
+    if (sim.type === 'particle' && sim.system) tickParticles(sim.system, dt);
+    if (sim.type === 'fluid'    && sim.surface) tickFluid(sim.surface, _physTime);
+  });
+}
+
+function clearPhysFor(entry) {
+  const sim = physMap.get(entry.id); if (!sim) return;
+  if (sim.system) {
+    scene.remove(sim.system._points);
+    sim.system._points.geometry.dispose();
+    sim.system._points.material.dispose();
+  }
+  if (sim.surface) {
+    scene.remove(sim.surface._mesh);
+    if (sim.surface._foam) scene.remove(sim.surface._foam);
+    sim.surface._mesh.geometry.dispose();
+    sim.surface._mesh.material.dispose();
+  }
+  physMap.delete(entry.id);
+  entry._physType = 'none';
+}
+
+function clearPhys() {
+  if (!selEntry) return;
+  clearPhysFor(selEntry);
+  // Reset UI
+  ['none','particle','fluid'].forEach(t => {
+    const b = $('phys-' + t);
+    b.classList.remove('pon','particle','fluid','none2');
+    if (t === 'none') { b.classList.add('pon','none2'); }
+  });
+  $('phys-particle-cfg').style.display = 'none';
+  $('phys-fluid-cfg').style.display    = 'none';
+  status('Physics simulation removed from ' + selEntry.name);
+}
+
+// sync UI when selecting object
+function syncPhysUI(entry) {
+  const sim = physMap.get(entry ? entry.id : -1);
+  const type = sim ? sim.type : 'none';
+  ['none','particle','fluid'].forEach(t => {
+    const b = $('phys-' + t); if (!b) return;
+    b.classList.remove('pon','particle','fluid','none2');
+    if (t === type) { b.classList.add('pon'); b.classList.add(t === 'none' ? 'none2' : t); }
+  });
+  $('phys-particle-cfg').style.display = type === 'particle' ? 'block' : 'none';
+  $('phys-fluid-cfg').style.display    = type === 'fluid'    ? 'block' : 'none';
+  if (sim) {
+    const c = sim.cfg || {};
+    if (type === 'particle') {
+      $('ph-count').value = c.count  ?? 800;
+      $('ph-speed').value = c.speed  ?? 2;
+      $('ph-spread').value= c.spread ?? 1.5;
+      $('ph-size').value  = c.size   ?? 0.06;
+      $('ph-col').value   = c.color  ?? '#f09000';
+      $('ph-grav').value  = c.gravity?? -9.8;
+    }
+    if (type === 'fluid') {
+      $('fl-amp').value   = c.amp     ?? 0.18;
+      $('fl-spd').value   = c.speed   ?? 1.4;
+      $('fl-frq').value   = c.freq    ?? 2.2;
+      $('fl-opa').value   = c.opacity ?? 0.72;
+      $('fl-col').value   = c.color   ?? '#00aaff';
+      $('fl-foam').checked= c.foam    ?? true;
+    }
+  }
+}
+
+// ═══════════ INIT ══════════════════════════════════════════
+function init() {
+  clock = new THREE.Clock();
+  const canvas = $('cv'), wrap = $('vw');
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x131620);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.35;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x131620, 0.006);
+
+  viewCam = new THREE.PerspectiveCamera(55, wrap.clientWidth / wrap.clientHeight, 0.01, 2000);
+  viewCam.position.set(6, 5, 9);
+
+  // Default scene lights (not user-owned)
+  const amb = new THREE.AmbientLight(0x667788, 0.85); amb.userData.sys = true; scene.add(amb);
+  const sun = new THREE.DirectionalLight(0xfff5e0, 2.0); sun.userData.sys = true;
+  sun.position.set(7, 12, 8); sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.near = 0.1; sun.shadow.camera.far = 200;
+  sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
+  sun.shadow.camera.top = 30;   sun.shadow.camera.bottom = -30;
+  sun.shadow.bias = -0.0003; scene.add(sun);
+  const rim = new THREE.DirectionalLight(0x003366, 0.4); rim.userData.sys = true;
+  rim.position.set(-8, 3, -5); scene.add(rim);
+
+  // Grid & floor
+  const grid = new THREE.GridHelper(80, 80, 0x2a3350, 0x1a2238);
+  grid.userData.helper = true; scene.add(grid);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.ShadowMaterial({ opacity: 0.25 }));
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; floor.userData.helper = true; scene.add(floor);
+  const axes = new THREE.AxesHelper(1.5); axes.userData.helper = true; scene.add(axes);
+
+  orbit = new OrbitControls(viewCam, canvas);
+  orbit.enableDamping = true; orbit.dampingFactor = 0.07;
+
+  xform = new TransformControls(viewCam, canvas);
+  xform.addEventListener('change', () => { refreshProps(); drawTL(); });
+  xform.addEventListener('dragging-changed', e => { orbit.enabled = !e.value; });
+  scene.add(xform);
+
+  // Timeline
+  tlC = $('tlcanvas'); tlX = tlC.getContext('2d');
+  tlC.addEventListener('mousedown', onTLDown);
+  tlC.addEventListener('mousemove', e => { if (e.buttons & 1) onTLDown(e); });
+
+  // Viewport pointer
+  canvas.addEventListener('pointerdown', e => { vpDown = true; if (e.button === 1) { e.preventDefault(); middleDown = true; } });
+  canvas.addEventListener('pointermove', () => { vpDown = false; });
+  canvas.addEventListener('pointerup',   e => { if (e.button === 1) middleDown = false; onVpUp(e); });
+  canvas.addEventListener('pointercancel', () => { middleDown = false; });
+  canvas.addEventListener('dblclick',    onVpDbl);
+  // Prevent context menu on middle-click
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+  window.addEventListener('resize',    onResize);
+  document.addEventListener('keydown', onKey);
+
+  // Drag & drop
+  document.addEventListener('pointerdown', e => {
+    // Close add-drop if clicking outside
+    const addDrop = document.getElementById('add-drop');
+    if (addDrop && addDrop.classList.contains('show')) {
+      if (!e.target.closest('#add-drop') && !e.target.closest('#btn-add-drop')) closeAddDrop();
+    }
+  });
+  document.addEventListener('dragenter', e => { e.preventDefault(); dropN++; $('dropov').classList.add('show'); });
+  document.addEventListener('dragleave', e => { e.preventDefault(); if (--dropN <= 0) { dropN = 0; $('dropov').classList.remove('show'); } });
+  document.addEventListener('dragover',  e => e.preventDefault());
+  document.addEventListener('drop',      onDrop);
+
+  // Wire up file inputs
+  // No JS-imposed file size limit — browser memory is the only cap
+  // Notify user if file > 500 MB so they know it may take a moment
+  const _warnLarge = inp => {
+    if (inp.files[0] && inp.files[0].size > 500 * 1024 * 1024)
+      status('Large file: ' + (inp.files[0].size/1024/1024).toFixed(0) + ' MB — loading may take a while…');
+  };
+  $('i-fbx').addEventListener('change',  e => { _warnLarge(e.target); doImport(e.target, 'fbx'); });
+  $('i-obj').addEventListener('change',  e => { _warnLarge(e.target); doImport(e.target, 'obj'); });
+  $('i-gltf').addEventListener('change', e => { _warnLarge(e.target); doImport(e.target, 'gltf'); });
+  $('i-img').addEventListener('change',  e => doImport(e.target, 'img'));
+  initTexInput(); // texture input for material panel
+  initResize();    // panel drag-to-resize
+  // Map loader
+  $('i-map').addEventListener('change', e => {
+    if (!e.target.files[0]) return;
+    doImport(e.target, 'gltf');
+  });
+
+  onResize();
+  requestAnimationFrame(loop);
+  status('PrusianAnimator ready  •  Supported: FBX, OBJ, GLTF/GLB, images');
+}
+
+// ═══════════ LOOP ══════════════════════════════════════════
+function loop() {
+  requestAnimationFrame(loop);
+  orbit.update();
+  const _dt = clock.getDelta();
+  // Update ALL animation mixers simultaneously
+  objects.forEach(o => { if (o.mesh && o.mesh.userData._mixer) o.mesh.userData._mixer.update(_dt); });
+  tickPhysics(_dt);
+  tickLasers(_dt);
+
+  // Update light helpers
+  objects.forEach(o => { if (o.type === 'light' && o.helper && o.helper.update) o.helper.update(); });
+
+  if (isPlaying) {
+    const now = performance.now();
+    if (now - lastFT >= 1000 / fps) {
+      lastFT = now; curF++;
+      if (curF >= totalF) { curF = $('chk-loop').checked ? 0 : totalF - 1; if (!$('chk-loop').checked) stopPlay(); }
+      applyKF(curF); updateFCtr(); drawTL();
+    }
+  }
+  renderer.render(scene, (isCamView && renderCam) ? renderCam : viewCam);
+}
+
+function onResize() {
+  const W = $('vw').clientWidth, H = $('vw').clientHeight;
+  viewCam.aspect = W / H; viewCam.updateProjectionMatrix();
+  if (renderCam) { renderCam.aspect = W / H; renderCam.updateProjectionMatrix(); }
+  renderer.setSize(W, H);
+  tlC.width  = $('tl').clientWidth  || 600;
+  tlC.height = $('tl').clientHeight - 28 || 120;
+  drawTL();
+}
+
+// ═══════════ STATUS ═════════════════════════════════════════
+function status(m) { $('stat').textContent = m; }
+function showLoad(m) { $('ltxt').textContent = m || 'Loading…'; $('lov').style.display = 'flex'; }
+function hideLoad()  { $('lov').style.display = 'none'; }
+
+// ═══════════ IMPORT ═════════════════════════════════════════
+function doImport(inp, type) {
+  const file = inp.files[0]; if (!file) return;
+  const name = file.name.replace(/\.[^.]+$/, '');
+  const url  = URL.createObjectURL(file);
+  const cleanup = () => { URL.revokeObjectURL(url); inp.value = ''; };
+
+  if (type === 'img') {
+    new THREE.TextureLoader().load(url, tex => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      const a = tex.image.width / tex.image.height;
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(3 * a, 3),
+        new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide, transparent: true })
+      );
+      m.position.set(0, 1.5, 0); m.castShadow = true;
+      addEntry(m, name, 'image'); cleanup();
+    }); return;
+  }
+
+  showLoad('Loading ' + file.name + '…');
+  const onProg = p => {
+    if (p.total) {
+      const pct = Math.round(p.loaded / p.total * 100);
+      $('ltxt').textContent = 'Loading… ' + pct + '%  (' + (p.loaded/1024/1024).toFixed(1) + ' MB)';
+    }
+  };
+  const onErr  = e => { hideLoad(); cleanup(); status('Error loading ' + file.name + ': ' + (e.message || e)); };
+
+  if (type === 'fbx') {
+    const loader = new FBXLoader();
+    // Use async loading — frees the main thread while the parser runs
+    loader.loadAsync(url, onProg).then(fbx => {
+      autoScale(fbx);
+      fbx.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      storeOriginalMats(fbx);
+      let hasSkel = false; fbx.traverse(c => { if (c.isSkinnedMesh) hasSkel = true; });
+      let skelH = null;
+      if (hasSkel) { skelH = new THREE.SkeletonHelper(fbx); skelH.userData.helper = true; scene.add(skelH); }
+      if (fbx.animations && fbx.animations.length) {
+        const mx = new THREE.AnimationMixer(fbx); fbx.userData._mixer = mx; fbx.userData._anims = fbx.animations;
+      }
+      fbx.userData._hasSkel = hasSkel; fbx.userData._skelH = skelH;
+      const entry = addEntry(fbx, name, 'fbx');
+      entry.hasSkel = hasSkel; entry.skelHelper = skelH; entry.skelVis = true;
+      if (hasSkel && selEntry === entry) showProps(entry, entry.mesh, false);
+      hideLoad(); cleanup();
+      status('FBX loaded: ' + name + (hasSkel ? ' (skeleton)' : '') + (fbx.animations.length ? ' +' + fbx.animations.length + ' anims' : ''));
+    }).catch(onErr);
+    return;
+  }
+
+  if (type === 'obj') {
+    const loader = new OBJLoader();
+    loader.loadAsync(url, onProg).then(obj => {
+      autoScale(obj);
+      obj.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+      storeOriginalMats(obj);
+      addEntry(obj, name, 'obj');
+      hideLoad(); cleanup();
+      status('OBJ loaded: ' + name);
+    }).catch(onErr);
+    return;
+  }
+
+  if (type === 'gltf') {
+    // DRACOLoader enables Draco-compressed GLTF/GLB files (common from Blender/Sketchfab)
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
+    dracoLoader.preload();
+
+    const loader = new GLTFLoader();
+    loader.setDRACOLoader(dracoLoader);
+
+    const onGLTFErr = e => {
+      // Surface a readable error instead of swallowing it
+      const msg = (e && (e.message || e.toString())) || 'Unknown error';
+      hideLoad(); cleanup();
+      status('GLTF error: ' + msg.slice(0, 120));
+      console.error('GLTF load error:', e);
+    };
+
+    loader.load(url, gltf => {
+      try {
+        const root = gltf.scene || gltf.scenes?.[0];
+        if (!root) { onGLTFErr(new Error('GLTF has no scene')); return; }
+
+        autoScale(root);
+        root.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true; c.receiveShadow = true;
+            // Fix color space for GLTF textures
+            if (c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              mats.forEach(m => {
+                if (!m) return;
+                if (m.map)          m.map.colorSpace          = THREE.SRGBColorSpace;
+                if (m.emissiveMap)  m.emissiveMap.colorSpace   = THREE.SRGBColorSpace;
+              });
+            }
+          }
+        });
+
+        storeOriginalMats(root);
+
+        let hasSkel = false;
+        root.traverse(c => { if (c.isSkinnedMesh) hasSkel = true; });
+        let skelH = null;
+        if (hasSkel) {
+          skelH = new THREE.SkeletonHelper(root);
+          skelH.userData.helper = true;
+          scene.add(skelH);
+        }
+
+        const anims = gltf.animations || [];
+        if (anims.length) {
+          const mx = new THREE.AnimationMixer(root);
+          root.userData._mixer = mx;
+          root.userData._anims = anims;
+        }
+
+        root.userData._hasSkel = hasSkel;
+        root.userData._skelH   = skelH;
+
+        const entry = addEntry(root, name, 'gltf');
+        entry.hasSkel = hasSkel; entry.skelHelper = skelH; entry.skelVis = true;
+        if (hasSkel && selEntry === entry) showProps(entry, entry.mesh, false);
+
+        hideLoad(); cleanup();
+        dracoLoader.dispose();
+        status('GLTF loaded: ' + name
+          + (hasSkel ? ' (skeleton)' : '')
+          + (anims.length ? '  +' + anims.length + ' anims' : ''));
+
+      } catch (err) { onGLTFErr(err); }
+    }, onProg, onGLTFErr);
+    return;
+  }
+}
+
+// Store originals so we can restore them
+function storeOriginalMats(root) {
+  root.traverse(c => {
+    if (c.isMesh && c.material) {
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      c.userData.origMats = mats.map(m => m ? m.clone() : null);
+    }
+  });
+}
+
+function autoScale(o) {
+  const box = new THREE.Box3().setFromObject(o);
+  const sz  = box.getSize(new THREE.Vector3());
+  const mx  = Math.max(sz.x, sz.y, sz.z);
+  if (mx > 14) o.scale.setScalar(10 / mx);
+  else if (mx < 0.05) o.scale.setScalar(1 / mx);
+  // Center on ground
+  const b2 = new THREE.Box3().setFromObject(o);
+  o.position.y -= b2.min.y;
+}
+
+function addEntry(mesh, name, type) {
+  scene.add(mesh);
+  const entry = { mesh, name, id: ++objId, type, keyframes: {} };
+  objects.push(entry);
+  updateList();
+  selectEntry(entry);
+  return entry;
+}
+
+// ═══════════ DROP ════════════════════════════════════════════
+function onDrop(e) {
+  e.preventDefault(); dropN = 0; $('dropov').classList.remove('show');
+  Array.from(e.dataTransfer.files).forEach(f => {
+    const n = f.name.toLowerCase();
+    let type = null;
+    if (n.endsWith('.fbx'))  type = 'fbx';
+    else if (n.endsWith('.obj')) type = 'obj';
+    else if (n.endsWith('.gltf') || n.endsWith('.glb')) type = 'gltf';
+    else if (f.type.startsWith('image/')) type = 'img';
+    else if (n.endsWith('.blend') || n.endsWith('.max')) { status('⚠ ' + f.name + ' — export to FBX/GLTF from Blender/3dsMax first'); return; }
+    else { status('Unsupported: ' + f.name); return; }
+    const dt = new DataTransfer(); dt.items.add(f);
+    const id = { fbx:'i-fbx', obj:'i-obj', gltf:'i-gltf', img:'i-img' }[type];
+    const inp = $(id); inp.files = dt.files; doImport(inp, type);
+  });
+}
+
+// ═══════════ PRIMITIVES ══════════════════════════════════════
+const PRIM_GEO = {
+  box:         () => new THREE.BoxGeometry(1, 1, 1),
+  sphere:      () => new THREE.SphereGeometry(0.6, 32, 24),
+  cylinder:    () => new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32),
+  cone:        () => new THREE.ConeGeometry(0.6, 1.4, 32),
+  torus:       () => new THREE.TorusGeometry(0.6, 0.22, 16, 64),
+  plane:       () => new THREE.PlaneGeometry(2, 2),
+  capsule:     () => new THREE.CapsuleGeometry(0.4, 0.8, 8, 16),
+  ring:        () => new THREE.RingGeometry(0.3, 0.7, 32),
+  torusknot:   () => new THREE.TorusKnotGeometry(0.5, 0.18, 120, 16),
+  icosahedron: () => new THREE.IcosahedronGeometry(0.7, 0),
+  octahedron:  () => new THREE.OctahedronGeometry(0.7, 0),
+  tetrahedron: () => new THREE.TetrahedronGeometry(0.8, 0),
+};
+const PRIM_COL = { box:0x3355cc, sphere:0x33aacc, cylinder:0x22aa77, cone:0xcc6633, torus:0xaa44cc, plane:0x446655, capsule:0x55aadd, ring:0xcc9933, torusknot:0xcc3377, icosahedron:0x55cc88, octahedron:0xcc5555, tetrahedron:0x8855cc };
+
+function addPrim(t) {
+  const geo = (PRIM_GEO[t] || PRIM_GEO.box)();
+  const mat = new THREE.MeshStandardMaterial({ color: PRIM_COL[t] || 0x888888, roughness: 0.55, metalness: 0.15 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  mesh.position.set((Math.random() - 0.5) * 4, (t === 'plane' || t === 'ring') ? 0 : 0.75, (Math.random() - 0.5) * 4);
+  if (t === 'plane' || t === 'ring') mesh.rotation.x = -Math.PI / 2;
+  mesh.userData.origMats = [mat.clone()];
+  addEntry(mesh, t + '_' + (objId + 1), t);
+}
+
+// ═══════════ LIGHTS ══════════════════════════════════════════
+function addLight(t) {
+  let light, helper = null;
+  if (t === 'point') {
+    light = new THREE.PointLight(0xffffff, 2, 20, 2);
+    light.position.set((Math.random() - 0.5) * 6, 4, (Math.random() - 0.5) * 6);
+    helper = new THREE.PointLightHelper(light, 0.4);
+  } else if (t === 'spot') {
+    light = new THREE.SpotLight(0xffffff, 3, 20, Math.PI / 6, 0.2, 2);
+    light.position.set(0, 7, 0); light.target.position.set(0, 0, 0);
+    scene.add(light.target);
+    light.shadow.mapSize.set(1024, 1024);
+    helper = new THREE.SpotLightHelper(light);
+  } else if (t === 'directional') {
+    light = new THREE.DirectionalLight(0xffffff, 1.5);
+    light.position.set(5, 8, 5);
+    light.shadow.mapSize.set(2048, 2048);
+    light.shadow.camera.left = light.shadow.camera.bottom = -20;
+    light.shadow.camera.right = light.shadow.camera.top = 20;
+    helper = new THREE.DirectionalLightHelper(light, 1.2);
+  } else if (t === 'hemisphere') {
+    light = new THREE.HemisphereLight(0x4488ff, 0x442200, 0.9);
+    helper = new THREE.HemisphereLightHelper(light, 0.8);
+  } else if (t === 'ambient') {
+    light = new THREE.AmbientLight(0xffffff, 0.5);
+  } else if (t === 'area') {
+    light = new THREE.RectAreaLight(0xffffff, 5, 4, 3);
+    light.position.set(0, 5, 3); light.lookAt(0, 0, 0);
+  }
+  light.castShadow = (t === 'spot' || t === 'directional');
+  scene.add(light);
+  if (helper) { helper.userData.helper = true; scene.add(helper); }
+  const entry = { mesh: light, name: t + 'Light_' + (objId + 1), id: ++objId, type: 'light', lightType: t, helper, keyframes: {} };
+  objects.push(entry); updateList(); selectEntry(entry);
+  status('Added ' + t + ' light');
+}
+
+function lightProp() {
+  if (!selEntry || selEntry.type !== 'light') return;
+  const l = selEntry.mesh, lt = selEntry.lightType;
+  l.intensity = parseFloat($('li').value) || 1;
+  if (lt === 'hemisphere') {
+    if (l.color) l.color.set($('lsky').value);
+    if (l.groundColor) l.groundColor.set($('lgnd').value);
+  } else {
+    if (l.color) l.color.set($('lc').value);
+  }
+  if (lt === 'point' || lt === 'spot') l.distance = parseFloat($('ld').value) || 20;
+  if (lt === 'spot') { l.angle = THREE.MathUtils.degToRad(parseFloat($('la').value) || 30); l.penumbra = parseFloat($('lpen').value) || 0.2; }
+  l.castShadow = $('lsh').checked;
+  if (selEntry.helper && selEntry.helper.update) selEntry.helper.update();
+}
+// lightHelper defined below in hideRig section
+
+
+// ═══════════ LASER SYSTEM ════════════════════════════════════
+let laserPickMode = false;   // 'A' | 'B' | false
+let laserPtA      = null;    // THREE.Vector3
+let laserPtB      = null;
+let laserEntries  = [];      // [{entry, beam, particles}]
+
+// ── Entry point: user clicks "Add Laser" ──────────────────────
+function startLaser() {
+  // Disable orbit while picking
+  orbit.enabled = false;
+  laserPickMode = 'A'; laserPtA = null; laserPtB = null;
+  const ov = $('laser-pick-overlay');
+  ov.style.display = 'block';
+  $('laser-pick-label').textContent = 'A';
+  status('LASER: click viewport to set Point A');
+}
+
+function repickLaser() {
+  if (!selEntry || selEntry.type !== 'laser') return;
+  // Destroy old geometry, re-enter pick mode
+  destroyLaserGeometry(selEntry);
+  laserPickMode = 'A'; laserPtA = null; laserPtB = null;
+  orbit.enabled = false;
+  const ov = $('laser-pick-overlay');
+  ov.style.display = 'block';
+  $('laser-pick-label').textContent = 'A';
+  status('LASER: click viewport to re-pick Point A');
+}
+
+// ── Intercept viewport clicks for laser pick ──────────────────
+function handleLaserPick(e) {
+  if (!laserPickMode) return false;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const ndc  = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width)  *  2 - 1,
+   -((e.clientY - rect.top)  / rect.height) *  2 + 1
+  );
+  const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, viewCam);
+
+  // Try to hit existing objects; fallback to a plane at z=0
+  let hitPt = null;
+  const allMeshes = [];
+  objects.forEach(o => {
+    if (o.type !== 'laser') o.mesh.traverse(c => { if (c.isMesh) allMeshes.push(c); });
+  });
+  const hits = ray.intersectObjects(allMeshes, false);
+  if (hits.length) {
+    hitPt = hits[0].point.clone();
+  } else {
+    // Intersect with ground plane Y=0
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    hitPt = new THREE.Vector3();
+    ray.ray.intersectPlane(plane, hitPt);
+    if (!hitPt) hitPt = ray.ray.origin.clone().addScaledVector(ray.ray.direction, 10);
+  }
+
+  if (laserPickMode === 'A') {
+    laserPtA = hitPt;
+    laserPickMode = 'B';
+    $('laser-pick-label').textContent = 'B';
+    status('LASER: Point A set — now click Point B');
+  } else {
+    laserPtB = hitPt;
+    laserPickMode = false;
+    $('laser-pick-overlay').style.display = 'none';
+    orbit.enabled = true;
+    finaliseLaser();
+  }
+  return true; // consumed
+}
+
+function finaliseLaser() {
+  const cfg = defaultLaserCfg();
+  const { beam, ptLight } = buildLaserBeam(laserPtA, laserPtB, cfg);
+  const particles = buildLaserParticles(laserPtA, laserPtB, cfg);
+
+  const group = new THREE.Group();
+  group.add(beam);
+  if (ptLight) group.add(ptLight);
+  if (particles) group.add(particles._pts);
+  scene.add(group);
+
+  const entry = {
+    mesh:      group,
+    name:      'Laser_' + (objId + 1),
+    id:        ++objId,
+    type:      'laser',
+    laserCfg:  cfg,
+    laserBeam: beam,
+    laserPtLight: ptLight,
+    laserParticles: particles,
+    ptA:       laserPtA.clone(),
+    ptB:       laserPtB.clone(),
+    keyframes: {}
+  };
+  objects.push(entry);
+  updateList();
+  selectEntry(entry);
+
+  $('lz-dot-a').classList.add('set');
+  $('lz-dot-b').classList.add('set');
+  status('Laser created  •  Use Properties panel to adjust');
+}
+
+function defaultLaserCfg() {
+  return {
+    type:    'continuous',
+    color:   '#ff0000',
+    thick:   3,
+    glow:    4,
+    pCount:  600,
+    pSpeed:  2.5,
+    pLife:   1.2,
+    pSize:   0.05,
+    pSpread: 0.8,
+  };
+}
+
+// ── Build beam (THREE.Line with custom line material) ─────────
+function buildLaserBeam(ptA, ptB, cfg) {
+  const geo  = new THREE.BufferGeometry().setFromPoints([ptA.clone(), ptB.clone()]);
+  const mat  = new THREE.LineBasicMaterial({
+    color:       new THREE.Color(cfg.color),
+    linewidth:   cfg.thick,   // only works in some contexts; we compensate with glow mesh
+    transparent: true,
+    opacity:     1,
+    depthWrite:  false,
+    blending:    THREE.AdditiveBlending,
+  });
+  const line = new THREE.Line(geo, mat);
+  line.userData.isLaserBeam = true;
+
+  // Glow tube around the beam
+  const dir    = new THREE.Vector3().subVectors(ptB, ptA);
+  const len    = dir.length();
+  const mid    = new THREE.Vector3().addVectors(ptA, ptB).multiplyScalar(0.5);
+  const glowR  = 0.01 * cfg.thick * (1 + cfg.glow * 0.15);
+  const tubeGeo = new THREE.CylinderGeometry(glowR, glowR, len, 8, 1);
+  const tubeMat = new THREE.MeshBasicMaterial({
+    color:      new THREE.Color(cfg.color),
+    transparent:true,
+    opacity:    0.18 + cfg.glow * 0.06,
+    depthWrite: false,
+    blending:   THREE.AdditiveBlending,
+    side:       THREE.DoubleSide,
+  });
+  const tube = new THREE.Mesh(tubeGeo, tubeMat);
+  tube.position.copy(mid);
+  tube.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    dir.clone().normalize()
+  );
+  tube.userData.isLaserGlow = true;
+
+  // Point light at midpoint for scene illumination
+  const ptLight = new THREE.PointLight(new THREE.Color(cfg.color), 1.5 + cfg.glow * 0.3, 8);
+  ptLight.position.copy(mid);
+
+  const group = new THREE.Group();
+  group.add(line, tube);
+  return { beam: group, ptLight };
+}
+
+// ── Build particle system along the beam ──────────────────────
+function buildLaserParticles(ptA, ptB, cfg) {
+  if (cfg.type !== 'particle') return null;
+  const N     = cfg.pCount;
+  const pos   = new Float32Array(N * 3);
+  const vel   = new Float32Array(N * 3);
+  const life  = new Float32Array(N);
+  const maxL  = new Float32Array(N);
+  const dir   = new THREE.Vector3().subVectors(ptB, ptA);
+  const len   = dir.length();
+
+  const reset = i => {
+    // Random position along beam
+    const t2 = Math.random();
+    const sp = ptA.clone().addScaledVector(dir, t2);
+    pos[i*3]   = sp.x; pos[i*3+1] = sp.y; pos[i*3+2] = sp.z;
+    // Random velocity in all directions
+    const theta = Math.random() * Math.PI * 2;
+    const phi   = Math.acos(2 * Math.random() - 1);
+    const spd   = (0.3 + Math.random() * 0.7) * cfg.pSpeed;
+    vel[i*3]   = spd * Math.sin(phi) * Math.cos(theta);
+    vel[i*3+1] = spd * Math.sin(phi) * Math.sin(theta);
+    vel[i*3+2] = spd * Math.cos(phi);
+    maxL[i]    = (0.4 + Math.random() * 0.6) * cfg.pLife;
+    life[i]    = Math.random() * maxL[i]; // stagger start
+  };
+  for (let i = 0; i < N; i++) reset(i);
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    color:          new THREE.Color(cfg.color),
+    size:           cfg.pSize,
+    transparent:    true,
+    opacity:        0.88,
+    depthWrite:     false,
+    blending:       THREE.AdditiveBlending,
+    sizeAttenuation:true,
+  });
+  const pts = new THREE.Points(geo, mat);
+  pts.userData.isLaserPart = true;
+
+  return { _pts: pts, _pos: pos, _vel: vel, _life: life, _maxL: maxL,
+           _N: N, _reset: reset, _ptA: ptA.clone(), _ptB: ptB.clone(),
+           _dir: dir.clone(), _len: len };
+}
+
+// ── Tick laser particles each frame ───────────────────────────
+function tickLasers(dt) {
+  objects.forEach(entry => {
+    if (entry.type !== 'laser') return;
+    const p = entry.laserParticles;
+    if (!p || !entry.laserCfg || entry.laserCfg.type !== 'particle') return;
+    const { _pos: pos, _vel: vel, _life: life, _maxL: maxL, _N: N, _reset: reset } = p;
+    const attr = p._pts.geometry.attributes.position;
+    const spread = entry.laserCfg.pSpread;
+    for (let i = 0; i < N; i++) {
+      life[i] += dt;
+      if (life[i] > maxL[i]) { reset(i); life[i] = 0; continue; }
+      // fade out by shrinking toward beam as life progresses
+      const fade = 1 - life[i] / maxL[i];
+      pos[i*3]   += vel[i*3]   * dt * fade;
+      pos[i*3+1] += vel[i*3+1] * dt * fade;
+      pos[i*3+2] += vel[i*3+2] * dt * fade;
+    }
+    attr.array.set(pos);
+    attr.needsUpdate = true;
+  });
+}
+
+// ── Destroy laser geometry before rebuild ─────────────────────
+function destroyLaserGeometry(entry) {
+  if (entry.laserBeam) {
+    entry.mesh.remove(entry.laserBeam);
+    entry.laserBeam.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
+    entry.laserBeam = null;
+  }
+  if (entry.laserPtLight) { entry.mesh.remove(entry.laserPtLight); entry.laserPtLight = null; }
+  if (entry.laserParticles) {
+    entry.mesh.remove(entry.laserParticles._pts);
+    entry.laserParticles._pts.geometry.dispose();
+    entry.laserParticles._pts.material.dispose();
+    entry.laserParticles = null;
+  }
+}
+
+// ── Rebuild laser after config change ─────────────────────────
+function rebuildLaser(entry) {
+  destroyLaserGeometry(entry);
+  const cfg = entry.laserCfg;
+  const { beam, ptLight } = buildLaserBeam(entry.ptA, entry.ptB, cfg);
+  entry.laserBeam   = beam;
+  entry.laserPtLight = ptLight;
+  entry.mesh.add(beam);
+  if (ptLight) entry.mesh.add(ptLight);
+  if (cfg.type === 'particle') {
+    entry.laserParticles = buildLaserParticles(entry.ptA, entry.ptB, cfg);
+    if (entry.laserParticles) entry.mesh.add(entry.laserParticles._pts);
+  }
+}
+
+// ── Read panel values → update laser ──────────────────────────
+function updateLaser() {
+  if (!selEntry || selEntry.type !== 'laser') return;
+  const cfg = selEntry.laserCfg;
+  cfg.color   = $('lz-col').value;
+  cfg.thick   = parseFloat($('lz-thick').value)  || 3;
+  cfg.glow    = parseFloat($('lz-glow').value)   || 4;
+  cfg.pCount  = parseInt($('lz-pcount').value)   || 600;
+  cfg.pSpeed  = parseFloat($('lz-pspeed').value) || 2.5;
+  cfg.pLife   = parseFloat($('lz-plife').value)  || 1.2;
+  cfg.pSize   = parseFloat($('lz-psize').value)  || 0.05;
+  cfg.pSpread = parseFloat($('lz-pspread').value)|| 0.8;
+  rebuildLaser(selEntry);
+  $('lz-thick-val').textContent = cfg.thick + 'px';
+}
+
+function setLaserType(t) {
+  if (!selEntry || selEntry.type !== 'laser') return;
+  selEntry.laserCfg.type = t;
+  ['continuous','particle'].forEach(k => {
+    const b = $('lzt-' + k); if (b) { b.classList.toggle('lzon', k === t); }
+  });
+  $('lz-particle-cfg').style.display = t === 'particle' ? 'block' : 'none';
+  rebuildLaser(selEntry);
+}
+
+function syncLaserPanel(entry) {
+  const cfg = entry.laserCfg;
+  $('lz-col').value     = cfg.color;
+  $('lz-thick').value   = cfg.thick;
+  $('lz-thick-val').textContent = cfg.thick + 'px';
+  $('lz-glow').value    = cfg.glow;
+  $('lz-pcount').value  = cfg.pCount;
+  $('lz-pspeed').value  = cfg.pSpeed;
+  $('lz-plife').value   = cfg.pLife;
+  $('lz-psize').value   = cfg.pSize;
+  $('lz-pspread').value = cfg.pSpread;
+  ['continuous','particle'].forEach(k => {
+    const b = $('lzt-' + k); if (b) b.classList.toggle('lzon', k === cfg.type);
+  });
+  $('lz-particle-cfg').style.display = cfg.type === 'particle' ? 'block' : 'none';
+  $('lz-dot-a').classList.toggle('set', !!entry.ptA);
+  $('lz-dot-b').classList.toggle('set', !!entry.ptB);
+}
+
+
+// ═══════════ UNITE SYSTEM ════════════════════════════════════
+// A "union group" is a virtual parent that holds two or more entries.
+// All transform operations (move/rotate/scale/keyframe) on ANY member
+// are forwarded to the union group root, so they move as one.
+// Works with meshes, lights, imported models — any entry type.
+
+let uniteMode = false;      // 'A' | 'B' | false
+let uniteEntryA = null;
+const unionGroups = new Map(); // groupId → { id, name, members: [entry,...], root: THREE.Group }
+let unionGroupId = 0;
+
+function startUnite() {
+  if (uniteMode) { cancelUnite(); return; }
+  uniteMode = 'A'; uniteEntryA = null;
+  const ov = $('unite-overlay'), msg = $('unite-msg');
+  ov.classList.add('show');
+  msg.textContent = '⊞ CLICK OBJECT A IN VIEWPORT OR SCENE LIST';
+  status('UNITE: click Object A — then click Object B to bind them');
+}
+
+function cancelUnite() {
+  uniteMode = false; uniteEntryA = null;
+  $('unite-overlay').classList.remove('show');
+  orbit.enabled = true;
+  status('Unite cancelled');
+}
+
+// Called from scene list click and viewport click when uniteMode is active
+function handleUniteClick(entry) {
+  if (!uniteMode) return false;
+  if (uniteMode === 'A') {
+    uniteEntryA = entry;
+    uniteMode = 'B';
+    const displayName = (entry.name || 'object').toUpperCase().slice(0, 24);
+    const hint = entry.type === 'union'
+      ? '⊞ CLICK ANY OBJECT TO ADD TO: ' + displayName
+      : '⊞ NOW CLICK OBJECT B TO UNITE WITH: ' + displayName;
+    $('unite-msg').textContent = hint;
+    status('UNITE: A = ' + entry.name + ' — now click the object to add/merge');
+    return true;
+  }
+  if (uniteMode === 'B') {
+    if (entry === uniteEntryA) { status('UNITE: pick a different object'); return true; }
+    finaliseUnite(uniteEntryA, entry);
+    uniteMode = false; uniteEntryA = null;
+    $('unite-overlay').classList.remove('show');
+    return true;
+  }
+  return false;
+}
+
+function _addEntryToGroup(group, entry) {
+  // entry = any non-proxy object that is NOT already in this group
+  if (group.members.includes(entry)) return; // already a member
+  group.root.attach(entry.mesh);             // preserves world transform
+  group.members.push(entry);
+  entry._unionGroup = group.id;
+}
+
+function _mergeGroups(gA, gB) {
+  // Absorb all members of gB into gA, then delete gB proxy + group
+  gB.members.forEach(m => {
+    gA.root.attach(m.mesh);
+    m._unionGroup = gA.id;
+    gA.members.push(m);
+  });
+  // Remove gB proxy from objects list
+  objects = objects.filter(o => o !== gB.proxyEntry);
+  scene.remove(gB.root);
+  unionGroups.delete(gB.id);
+}
+
+function _refreshGroupName(group) {
+  group.name = group.members.map(m => m.name).join('+');
+  group.proxyEntry.name = '⊞ ' + group.members.map(m => m.name.slice(0, 8)).join('+');
+}
+
+function finaliseUnite(eA, eB) {
+  // Resolve which groups (if any) each entry belongs to
+  const groupA = eA.type === 'union'
+    ? unionGroups.get(eA.unionGroupId)
+    : (eA._unionGroup != null ? unionGroups.get(eA._unionGroup) : null);
+  const groupB = eB.type === 'union'
+    ? unionGroups.get(eB.unionGroupId)
+    : (eB._unionGroup != null ? unionGroups.get(eB._unionGroup) : null);
+
+  let group = null;
+
+  if (!groupA && !groupB) {
+    // ── CASE 1: Neither is in a group — create fresh union ──────────
+    const posA = new THREE.Vector3(), posB = new THREE.Vector3();
+    eA.mesh.getWorldPosition(posA); eB.mesh.getWorldPosition(posB);
+    const mid = posA.clone().add(posB).multiplyScalar(0.5);
+    const root = new THREE.Group(); root.position.copy(mid); root.userData.isUnionRoot = true; scene.add(root);
+    const gid = ++unionGroupId;
+    group = { id: gid, name: '', members: [], root };
+    unionGroups.set(gid, group);
+    const proxyEntry = { mesh: root, name: '', id: ++objId, type: 'union', unionGroupId: gid, keyframes: {}, nodeKFs: new Map() };
+    group.proxyEntry = proxyEntry;
+    objects.push(proxyEntry);
+    _addEntryToGroup(group, eA);
+    _addEntryToGroup(group, eB);
+
+  } else if (groupA && !groupB) {
+    // ── CASE 2: A is in a group (or IS a group proxy), add B ────────
+    group = groupA;
+    const newMember = eB; // eB is the fresh entry
+    if (newMember.type === 'union') {
+      // B is another proxy — merge B's group into A
+      const groupB2 = unionGroups.get(newMember.unionGroupId);
+      if (groupB2) _mergeGroups(group, groupB2);
+    } else {
+      _addEntryToGroup(group, newMember);
+    }
+
+  } else if (!groupA && groupB) {
+    // ── CASE 3: B is in a group (or IS a group proxy), add A ────────
+    group = groupB;
+    const newMember = eA;
+    if (newMember.type === 'union') {
+      const groupA2 = unionGroups.get(newMember.unionGroupId);
+      if (groupA2) _mergeGroups(group, groupA2);
+    } else {
+      _addEntryToGroup(group, newMember);
+    }
+
+  } else if (groupA && groupB) {
+    if (groupA === groupB) {
+      status('These objects are already united'); return;
+    }
+    // ── CASE 4: Both are in different groups — merge them ───────────
+    _mergeGroups(groupA, groupB);
+    group = groupA;
+  }
+
+  _refreshGroupName(group);
+  updateList();
+  selectEntry(group.proxyEntry);
+  // Update union-info if visible
+  const ui = $('union-info');
+  if (ui) ui.textContent = group.members.length + ' objects: ' + group.members.map(m=>m.name).join(', ');
+  status('⊞ United: ' + group.proxyEntry.name + '  (' + group.members.length + ' objects)');
+}
+
+function dissolveUnion(proxyEntry) {
+  if (!proxyEntry || proxyEntry.type !== 'union') return;
+  const gid   = proxyEntry.unionGroupId;
+  const group = unionGroups.get(gid); if (!group) return;
+
+  // Return each member's mesh back to scene
+  const worldPos = new THREE.Vector3(), worldQ = new THREE.Quaternion(), worldS = new THREE.Vector3();
+  group.members.forEach(e => {
+    e.mesh.getWorldPosition(worldPos);
+    e.mesh.getWorldQuaternion(worldQ);
+    e.mesh.getWorldScale(worldS);
+    scene.attach(e.mesh); // detach from root, keep world transform
+    e._unionGroup = null;
+  });
+
+  // Remove proxy and root
+  scene.remove(group.root);
+  objects = objects.filter(o => o !== proxyEntry);
+  unionGroups.delete(gid);
+  selectEntry(null); updateList();
+  status('Union dissolved — objects are independent again');
+}
+
+// When a union proxy is selected, xform attaches to its root group
+// so moving/rotating/scaling it moves ALL children together.
+// KFs saved on the proxy entry animate the root group.
+
+// ═══════════ CAMERA ══════════════════════════════════════════
+function addCamera() {
+  if (renderCam) { status('Camera already exists.'); return; }
+  renderCam = new THREE.PerspectiveCamera(50, $('vw').clientWidth / $('vw').clientHeight, 0.05, 1000);
+  renderCam.position.set(0, 3, 9); renderCam.lookAt(0, 1, 0);
+  camHelper = new THREE.CameraHelper(renderCam); camHelper.userData.helper = true; scene.add(camHelper);
+  camGrp = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.35, 0.7), new THREE.MeshStandardMaterial({ color: 0xf09000, roughness: 0.5 }));
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.3, 16), new THREE.MeshStandardMaterial({ color: 0x111 }));
+  lens.rotation.x = Math.PI / 2; lens.position.z = -0.45; camGrp.add(body, lens);
+  scene.add(camGrp);
+  const entry = addEntry(renderCam, 'RenderCamera', 'camera');
+  return entry;
+}
+// Sets visibility of all scene helpers (light helpers, cam helper, skeleton helpers)
+function setHelpersVisible(v) {
+  // camera body + helper
+  if (camHelper) camHelper.visible = v;
+  if (camGrp)    camGrp.visible    = v;
+  // light helpers
+  objects.forEach(o => { if (o.helper) { o.helper.visible = v && (o._helperUserVis !== false); } });
+  // skeleton / rig helpers (explicit + via traverse)
+  objects.forEach(o => { if (o.skelHelper) o.skelHelper.visible = v && (o.skelVis !== false); });
+  // anything else flagged as helper in the scene
+  scene.traverse(c => { if (c.userData.helper) c.visible = v; });
+}
+
+function toggleCamView() {
+  if (!renderCam) { status('Add a camera first.'); return; }
+  isCamView = !isCamView;
+  $('cbadge').textContent = isCamView ? '📷 CAMERA VIEW' : ''; $('cbadge').style.display = isCamView ? 'block' : 'none';
+  $('btn-cv').classList.toggle('on', isCamView);
+  orbit.enabled = !isCamView;
+  // hide ALL helpers in cam view, restore when leaving
+  setHelpersVisible(!isCamView);
+}
+
+// ═══════════ PART SELECT MODE ════════════════════════════════
+function togglePartMode() {
+  partMode = !partMode;
+  $('btn-part').classList.toggle('part-on', partMode);
+  $('vtpart').style.display = partMode ? 'block' : 'none';
+  status(partMode ? 'Part Select ON — click individual mesh parts' : 'Part Select OFF — click to select whole model');
+  if (!partMode && selEntry) selectEntry(selEntry);
+}
+
+// ═══════════ SELECT (ENTRY = whole model) ════════════════════
+function deselectAll() {
+  if (selEntry && selEntry.mesh) {
+    selEntry.mesh.traverse(c => {
+      if (c.isMesh && c.material) {
+        const mm = Array.isArray(c.material) ? c.material : [c.material];
+        mm.forEach(m => { if (m.emissive && c.userData._oe !== undefined) m.emissive.setHex(c.userData._oe); });
+      }
+    });
+  }
+  if (selMesh && selMesh !== selEntry?.mesh) {
+    const mm = Array.isArray(selMesh.material) ? selMesh.material : [selMesh.material];
+    mm.forEach(m => { if (m && m.emissive && selMesh.userData._oe !== undefined) m.emissive.setHex(selMesh.userData._oe); });
+  }
+  xform.detach();
+  selEntry = null; selMesh = null;
+  $('vp-sel').textContent = 'NOTHING SELECTED';
+  $('props').style.display = 'none';
+  $('nosel').style.display = 'block';
+  updateList();
+  status('Deselected all');
+}
+
+function selectEntry(entry) {
+  // Deselect highlight
+  if (selMesh) { clearHighlight(selMesh); }
+  if (selEntry && selEntry.mesh && selEntry !== entry) { clearHighlightRoot(selEntry.mesh); }
+
+  selEntry = entry; selMesh = entry ? entry.mesh : null;
+  updateList();
+
+  if (!entry) {
+    $('props').style.display = 'none'; $('nosel').style.display = 'block';
+    $('vtsel').textContent = 'NOTHING SELECTED'; xform.detach(); return;
+  }
+
+  setHighlightRoot(entry.mesh);
+  xform.attach(entry.mesh);
+
+  showProps(entry, entry.mesh, false);
+}
+
+// Part select — click individual mesh or bone within a model
+function selectPart(node, ownerEntry) {
+  if (selMesh) clearHighlight(selMesh);
+  selMesh = node;
+  selEntry = ownerEntry;
+  updateList();
+  if (node.isMesh) setHighlight(node);
+  // Attach TransformControls to the actual node (Bone or Mesh)
+  // Rotating a Bone automatically moves all child bones (Three.js hierarchy)
+  xform.attach(node);
+  const isBone = node.isBone;
+  showProps(ownerEntry, node.isMesh ? node : ownerEntry.mesh, isBone ? false : true);
+  if (isBone) {
+    $('vtsel').textContent = ownerEntry.name + ' > 🦴 ' + (node.name || 'bone');
+    status('Bone selected: ' + (node.name || 'bone') + '  •  Rotate with R — children follow automatically');
+  }
+}
+
+function setHighlightRoot(root) {
+  root.traverse(c => {
+    if (c.isMesh && c.material) {
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      mats.forEach(m => { if (m && m.emissive) { c.userData._oe = c.userData._oe ?? m.emissive.getHex(); m.emissive.setHex(0x001f33); } });
+    }
+  });
+}
+function clearHighlightRoot(root) {
+  root.traverse(c => {
+    if (c.isMesh && c.material) {
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      mats.forEach(m => { if (m && m.emissive && c.userData._oe !== undefined) m.emissive.setHex(c.userData._oe); });
+    }
+  });
+}
+function setHighlight(mesh) {
+  if (!mesh || !mesh.isMesh || !mesh.material) return; // skip Bones (no material)
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  mats.forEach(m => { if (m && m.emissive) { mesh.userData._oe = mesh.userData._oe ?? m.emissive.getHex(); m.emissive.setHex(0x0a3a00); } });
+}
+function clearHighlight(mesh) {
+  if (!mesh || !mesh.isMesh || !mesh.material) return; // skip Bones
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  mats.forEach(m => { if (m && m.emissive && mesh.userData._oe !== undefined) m.emissive.setHex(mesh.userData._oe); });
+}
+
+// ═══════════ SHOW PROPS ══════════════════════════════════════
+function showProps(entry, targetMesh, isPart) {
+  $('props').style.display = 'block'; $('nosel').style.display = 'none';
+  $('vtsel').textContent = isPart ? (entry.name + ' > ' + (targetMesh.name || 'part')) : entry.name;
+  $('p-name').value = entry.name;
+
+  // Sync transform to targetMesh
+  refreshProps(targetMesh);
+
+  const isLight = entry.type === 'light', isCam = entry.type === 'camera';
+
+  // Color panel
+  const isLaserEntry = entry.type === 'laser';
+  const isUnionEntry = entry.type === 'union';
+  $('cp-col').style.display = (isLight || isCam || isLaserEntry || isUnionEntry) ? 'none' : 'block';
+  $('cp-phys').style.display = (isLight || isCam || isLaserEntry || isUnionEntry) ? 'none' : 'block';
+  if (!isLaserEntry && !isUnionEntry) syncPhysUI(entry);
+  $('col-part-lbl').style.display = isPart ? 'inline' : 'none';
+  if (!isLight && !isCam && !isLaserEntry && targetMesh && targetMesh.material) {
+    let col = '#888888', found = false;
+    const mats = Array.isArray(targetMesh.material) ? targetMesh.material : [targetMesh.material];
+    mats.forEach(m => { if (!found && m && m.color) { col = '#' + m.color.getHexString(); found = true; } });
+    $('col-pick').value = col;
+    syncMatUI(targetMesh);
+  }
+
+  // Parts list (for imported models with sub-meshes)
+  const parts = [];
+  if (!isLaserEntry && !isUnionEntry) entry.mesh.traverse(c => { if (c.isMesh) parts.push(c); });
+  const showParts = !isLaserEntry && !isUnionEntry && parts.length > 1 && (entry.type === 'fbx' || entry.type === 'gltf' || entry.type === 'obj');
+  $('cp-parts').style.display = showParts ? 'block' : 'none';
+  if (showParts) {
+    $('parts-count').textContent = '(' + parts.length + ')';
+    const wrap = $('parts-list'); wrap.innerHTML = '';
+    parts.forEach((p, i) => {
+      const d = document.createElement('div'); d.className = 'be' + (p === targetMesh ? ' bs' : '');
+      d.innerHTML = '<span style="color:var(--a2)">▣</span>' + (p.name || 'mesh_' + i).slice(0, 22);
+      d.title = p.name || '';
+      d.addEventListener('click', () => { selectPart(p, entry); });
+      wrap.appendChild(d);
+    });
+  }
+
+  // Light panel
+  $('cp-light').style.display = isLight ? 'block' : 'none';
+  if (isLight) { try { populateLightPanel(entry); } catch(e) { console.warn('lightPanel err:', e); } }
+  const isLaser = entry.type === 'laser';
+  $('cp-laser').style.display = isLaser ? 'block' : 'none';
+  if (isLaser) { try { syncLaserPanel(entry); } catch(e) { console.warn('laserPanel err:', e); } }
+
+  // Rig panel
+  const hasBones = !isLaserEntry && !isUnionEntry && (() => { let r = false; entry.mesh.traverse(c => { if (c.isBone) r = true; }); return r; })();
+  const hasAnims = !isLaserEntry && !isUnionEntry && !!(entry.mesh.userData._anims && entry.mesh.userData._anims.length);
+  // Show rig panel for any importable mesh (fbx/gltf/obj) so user can always add manual bones
+  const canRig   = !isLaserEntry && !isUnionEntry && !isLight && !isCam;
+  $('cp-rig').style.display = canRig ? 'block' : 'none';
+  if (canRig) {
+    // Tag native skinned-mesh bones so the Del button hides on them
+    entry.mesh.traverse(c => { if (c.isSkinnedMesh && c.skeleton) c.skeleton.bones.forEach(b => b.userData.isSkinBone = true); });
+    buildBoneList(entry);
+    buildAnimList(entry);
+    // Set rigPlacingFor so + BONE mode knows which model to attach to
+    rigPlacingFor = entry;
+    // Reset rig mode UI
+    setRigEditMode('pose');
+  }
+
+  updateKFCount();
+}
+
+function populateLightPanel(entry) {
+  const l = entry.mesh, lt = entry.lightType;
+  if (!l) return;
+  const safeHex = c => (c && c.getHexString) ? '#' + c.getHexString() : '#ffffff';
+  if (lt === 'hemisphere') $('lc').value = safeHex(l.color);
+  else $('lc').value = safeHex(l.color);
+  $('li').value = l.intensity;
+  $('l-dist').style.display = (lt === 'point' || lt === 'spot') ? 'flex' : 'none';
+  if (lt === 'point' || lt === 'spot') $('ld').value = l.distance || 20;
+  $('l-ang').style.display = lt === 'spot' ? 'flex' : 'none';
+  $('l-pen').style.display = lt === 'spot' ? 'flex' : 'none';
+  if (lt === 'spot') { $('la').value = Math.round(THREE.MathUtils.radToDeg(l.angle || Math.PI / 6)); $('lpen').value = l.penumbra || 0.2; }
+  $('l-sky').style.display = lt === 'hemisphere' ? 'flex' : 'none';
+  $('l-gnd').style.display = lt === 'hemisphere' ? 'flex' : 'none';
+  if (lt === 'hemisphere') { $('lsky').value = safeHex(l.color); $('lgnd').value = safeHex(l.groundColor); }
+  $('lsh').checked = l.castShadow;
+  $('lhelp').checked = entry.helper ? entry.helper.visible : true;
+}
+
+// ═══════════ REFRESH PROPS ═══════════════════════════════════
+function refreshProps(mesh) {
+  // Use the xform-attached node for bone accuracy, fall back to selMesh/root
+  const m = (xform && xform.object) ? xform.object : (mesh || selMesh);
+  if (!m || !m.position) return;
+  $('px').value = r2(m.position.x); $('py').value = r2(m.position.y); $('pz').value = r2(m.position.z);
+  $('rx').value = r2(THREE.MathUtils.radToDeg(m.rotation.x));
+  $('ry').value = r2(THREE.MathUtils.radToDeg(m.rotation.y));
+  $('rz').value = r2(THREE.MathUtils.radToDeg(m.rotation.z));
+  $('sx').value = r2(m.scale.x); $('sy').value = r2(m.scale.y); $('sz').value = r2(m.scale.z);
+}
+
+// ═══════════ PROP APPLY ══════════════════════════════════════
+function applyProp(id, v) {
+  const o = (xform && xform.object) ? xform.object : selMesh; if (!o) return;
+  ({ px:()=>o.position.x=v, py:()=>o.position.y=v, pz:()=>o.position.z=v,
+     rx:()=>o.rotation.x=THREE.MathUtils.degToRad(v), ry:()=>o.rotation.y=THREE.MathUtils.degToRad(v), rz:()=>o.rotation.z=THREE.MathUtils.degToRad(v),
+     sx:()=>o.scale.x=v, sy:()=>o.scale.y=v, sz:()=>o.scale.z=v })[id]?.();
+}
+
+
+
+// ═══════════ TEXTURE SYSTEM ══════════════════════════════════
+function initTexInput() {
+  const inp = $('i-tex'); if (!inp) return;
+  inp.addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const url = URL.createObjectURL(file);
+    new THREE.TextureLoader().load(url, tex => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      const rx = parseFloat($('tex-rx')?.value) || 1;
+      const ry = parseFloat($('tex-ry')?.value) || 1;
+      tex.repeat.set(rx, ry);
+      applyTexture(tex, file.name);
+      // Show preview
+      const pw = $('tex-preview-wrap'), pv = $('tex-preview'), pn = $('tex-name');
+      if (pw) pw.style.display = 'block';
+      if (pv) pv.src = url;
+      if (pn) pn.textContent = file.name;
+      URL.revokeObjectURL(url);
+      inp.value = '';
+    }, undefined, err => { status('Texture error: ' + (err.message || err)); inp.value = ''; });
+  });
+}
+
+function applyTexture(tex, fname) {
+  const target = selMesh || (selEntry ? selEntry.mesh : null);
+  if (!target) { status('Select an object first'); return; }
+  target.traverse(c => {
+    if (!c.isMesh) return;
+    const mats = Array.isArray(c.material) ? c.material : [c.material];
+    mats.forEach(m => {
+      if (!m) return;
+      // Dispose old map to free memory
+      if (m.map && m.map !== tex) m.map.dispose();
+      m.map = tex;
+      m.color.set(0xffffff); // reset color so texture shows correctly
+      m.needsUpdate = true;
+    });
+  });
+  // Store so resetColor can remove it
+  if (selEntry) selEntry._currentTex = tex;
+  status('Texture applied: ' + (fname || 'texture'));
+}
+
+function clearTexture() {
+  const target = selMesh || (selEntry ? selEntry.mesh : null);
+  if (!target) return;
+  target.traverse(c => {
+    if (!c.isMesh) return;
+    const mats = Array.isArray(c.material) ? c.material : [c.material];
+    mats.forEach(m => {
+      if (!m) return;
+      if (m.map) { m.map.dispose(); m.map = null; }
+      m.needsUpdate = true;
+    });
+  });
+  if (selEntry) selEntry._currentTex = null;
+  const pw = $('tex-preview-wrap'); if (pw) pw.style.display = 'none';
+  status('Texture removed');
+}
+
+function updateTexRepeat() {
+  const target = selMesh || (selEntry ? selEntry.mesh : null);
+  if (!target) return;
+  const rx = parseFloat($('tex-rx')?.value) || 1;
+  const ry = parseFloat($('tex-ry')?.value) || 1;
+  target.traverse(c => {
+    if (!c.isMesh) return;
+    const mats = Array.isArray(c.material) ? c.material : [c.material];
+    mats.forEach(m => { if (m && m.map) { m.map.repeat.set(rx, ry); m.map.needsUpdate = true; } });
+  });
+}
+
+function setOpacity(v) {
+  const target = selMesh; if (!target || !target.isMesh) return;
+  v = Math.max(0, Math.min(1, parseFloat(v) || 0));
+  const pct = Math.round(v * 100);
+  $('opac-slider').value = pct;
+  $('opac-val').textContent = pct + '%';
+  const mats = Array.isArray(target.material) ? target.material : [target.material];
+  mats.forEach(m => {
+    if (!m) return;
+    m.transparent = v < 1;
+    m.opacity = v;
+    m.depthWrite = v >= 0.99;
+    m.needsUpdate = true;
+  });
+}
+
+function setWireframe(on) {
+  const target = selMesh; if (!target || !target.isMesh) return;
+  const mats = Array.isArray(target.material) ? target.material : [target.material];
+  mats.forEach(m => { if (m) m.wireframe = on; });
+}
+
+function setDoubleSide(on) {
+  const target = selMesh; if (!target || !target.isMesh) return;
+  const mats = Array.isArray(target.material) ? target.material : [target.material];
+  mats.forEach(m => { if (m) { m.side = on ? THREE.DoubleSide : THREE.FrontSide; m.needsUpdate = true; } });
+}
+
+// Sync opacity/wireframe UI when selecting mesh
+function syncMatUI(mesh) {
+  if (!mesh || !mesh.isMesh) {
+    $('opac-slider').value = 100;
+    $('opac-val').textContent = '100%';
+    $('chk-wire').checked = false;
+    $('chk-dside').checked = false;
+    return;
+  }
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  const m = mats[0];
+  const pct = Math.round((m ? m.opacity ?? 1 : 1) * 100);
+  $('opac-slider').value = pct;
+  $('opac-val').textContent = pct + '%';
+  $('chk-wire').checked  = m ? !!m.wireframe : false;
+  $('chk-dside').checked = m ? m.side === THREE.DoubleSide : false;
+}
+
+function rename(n) { if (!selEntry) return; selEntry.name = n; $('vtsel').textContent = n; updateList(); }
+
+function applyColor(hex) {
+  const target = selMesh; if (!target || !target.isMesh) return;
+  $('col-pick').value = hex;
+  const mats = Array.isArray(target.material) ? target.material : [target.material];
+  mats.forEach(m => { if (m && m.color) m.color.set(hex); });
+  status('Color → ' + hex + ' on ' + (target.name || 'mesh'));
+}
+
+function resetColor() {
+  if (!selEntry) return;
+  selEntry.mesh.traverse(c => {
+    if (c.isMesh && c.userData.origMats) {
+      const orig = c.userData.origMats;
+      c.material = orig.map(m => m ? m.clone() : null);
+    }
+  });
+  status('Original colors restored');
+}
+
+// ═══════════ DELETE ══════════════════════════════════════════
+function del() {
+  if (!selEntry) return;
+  xform.detach();
+  if (selEntry.type === 'camera') {
+    scene.remove(renderCam); if (camHelper) scene.remove(camHelper); if (camGrp) scene.remove(camGrp);
+    renderCam = null; camHelper = null; camGrp = null; if (isCamView) toggleCamView();
+  } else {
+    scene.remove(selEntry.mesh);
+    if (selEntry.skelHelper) scene.remove(selEntry.skelHelper);
+    if (selEntry.helper) scene.remove(selEntry.helper);
+    clearPhysFor(selEntry);
+    if (selEntry.type === 'laser') destroyLaserGeometry(selEntry);
+    if (selEntry.type === 'union') { dissolveUnion(selEntry); return; }
+  }
+  objects = objects.filter(o => o !== selEntry);
+  selEntry = null; selMesh = null;
+  $('props').style.display = 'none'; $('nosel').style.display = 'block'; $('vtsel').textContent = 'NOTHING SELECTED';
+  updateList(); drawTL();
+}
+
+// ═══════════ SCENE LIST ══════════════════════════════════════
+const ICONS = { laser: '★', union: '⊞', fbx:'⬡', gltf:'✦', obj:'▣', image:'⬜', box:'⬛', sphere:'⬤', plane:'▭', cylinder:'⬭', cone:'▲', torus:'◯', capsule:'💊', ring:'⊙', torusknot:'✦', icosahedron:'⬡', octahedron:'◆', tetrahedron:'△', camera:'📷', light:'💡' };
+
+function updateList() {
+  const wrap = $('slist'); wrap.innerHTML = '';
+  if (!objects.length) { wrap.innerHTML = '<div class="si" style="font-style:italic;font-size:9px;padding:12px 8px;color:var(--t2)">Empty</div>'; return; }
+  objects.forEach(o => {
+    const d = document.createElement('div');
+    const isUnion = o.type === 'union';
+    const inUnion = !!o._unionGroup;
+    d.className = 'si' + (selEntry === o ? ' sel' : '') + (isUnion || inUnion ? ' united' : '');
+    d.innerHTML = `<span class="si-i">${ICONS[o.type] || '○'}</span><span class="si-n">${o.name}</span>`;
+    d.addEventListener('click', () => {
+      // If unite mode is active, handle the click as a unite selection
+      if (uniteMode) { handleUniteClick(o); return; }
+      selectEntry(o);
+    });
+    wrap.appendChild(d);
+  });
+}
+
+// ═══════════ VIEWPORT CLICK ══════════════════════════════════
+function onVpUp(e) {
+  if (!vpDown) return; vpDown = false;
+  if (xform.dragging) return;
+  // Intercept for manual rig bone placement
+  if (rigEditMode === 'add' && rigPlacingFor) { if (handleRigBonePlacement(e)) return; }
+  // Intercept for unite mode
+  if (uniteMode) {
+    const rect2 = renderer.domElement.getBoundingClientRect();
+    const ndc2  = new THREE.Vector2(((e.clientX-rect2.left)/rect2.width)*2-1,-((e.clientY-rect2.top)/rect2.height)*2+1);
+    const ray2  = new THREE.Raycaster(); ray2.setFromCamera(ndc2, viewCam);
+    const hits2 = ray2.intersectObjects(objects.filter(o=>o.type!=='union'&&o.type!=='laser').map(o=>o.mesh).filter(Boolean), true);
+    if (hits2.length) {
+      let obj2 = hits2[0].object;
+      while (obj2) { const f2 = objects.find(x => x.mesh === obj2); if (f2) { handleUniteClick(f2); return; } obj2 = obj2.parent; }
+    }
+    return;
+  }
+  // Intercept for laser point picking
+  if (handleLaserPick(e)) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const ndc  = new THREE.Vector2(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
+  const ray  = new THREE.Raycaster(); ray.setFromCamera(ndc, viewCam);
+
+  if (partMode) {
+    // Raycast against all meshes
+    const allMeshes = [];
+    objects.forEach(o => o.mesh.traverse(c => { if (c.isMesh) allMeshes.push({ mesh: c, entry: o }); }));
+    const hits = ray.intersectObjects(allMeshes.map(x => x.mesh), false);
+    if (hits.length) {
+      const hitMesh = hits[0].object;
+      const pair    = allMeshes.find(x => x.mesh === hitMesh);
+      if (pair) {
+        // For skinned meshes: prefer selecting nearest bone at hit point
+        // so that rotating it propagates to child bones (hand, fingers, etc.)
+        if (hitMesh.isSkinnedMesh && hitMesh.skeleton) {
+          const hitPt = hits[0].point;
+          let bestBone = null, bestDist = Infinity;
+          pair.entry.mesh.traverse(c => {
+            if (c.isBone) {
+              const wp = new THREE.Vector3();
+              c.getWorldPosition(wp);
+              const d = wp.distanceTo(hitPt);
+              if (d < bestDist) { bestDist = d; bestBone = c; }
+            }
+          });
+          if (bestBone) { selectPart(bestBone, pair.entry); return; }
+        }
+        selectPart(pair.mesh, pair.entry); return;
+      }
+    }
+    selectEntry(null); return;
+  }
+
+  // Normal mode — select whole object
+  const topMeshes = objects.map(o => o.mesh).filter(Boolean);
+  const hits = ray.intersectObjects(topMeshes, true);
+  if (hits.length) {
+    let obj = hits[0].object;
+    while (obj) {
+      const found = objects.find(x => x.mesh === obj);
+      if (found) { selectEntry(found); return; }
+      obj = obj.parent;
+    }
+  } else selectEntry(null);
+}
+
+function onVpDbl() {
+  if (selEntry && selEntry.mesh) {
+    const b = new THREE.Box3().setFromObject(selEntry.mesh);
+    orbit.target.copy(b.getCenter(new THREE.Vector3()));
+  }
+}
+
+// ═══════════ TRANSFORM MODE ══════════════════════════════════
+function setMode(m) {
+  xform.setMode(m);
+  [['btn-tr','translate'],['btn-ro','rotate'],['btn-sc','scale']].forEach(([id,k]) => $(id).classList.toggle('on', k === m));
+  $('vtmode').textContent = 'MODE: ' + m.toUpperCase();
+}
+
+// ═══════════ SKELETON / BONES ════════════════════════════════
+function buildBoneList(entry) {
+  const wrap = $('bonelist'); wrap.innerHTML = '';
+
+  // Collect ALL bones (native from FBX/GLTF or manually created)
+  const bones = []; entry.mesh.traverse(c => { if (c.isBone) bones.push(c); });
+  const hasBones = bones.length > 0;
+
+  $('bct').textContent = hasBones ? '(' + bones.length + ' bone' + (bones.length !== 1 ? 's' : '') + ')' : '';
+  $('skel-btn').style.display = (hasBones && entry.skelHelper) ? 'block' : 'none';
+  if (entry.skelHelper && hasBones) {
+    $('skel-btn').textContent = (entry.skelHelper.visible === false ? 'Show' : 'Hide') + ' Skeleton';
+  }
+
+  // Show/hide notice for mesh-only files (OBJ, no-skeleton GLTF)
+  const notice = $('no-skel-notice');
+  if (notice) notice.style.display = (!hasBones) ? 'block' : 'none';
+
+  if (!hasBones) return;
+
+  // Build a depth map for indentation
+  const depthMap = new Map();
+  bones.forEach(b => {
+    let depth = 0, cur = b.parent;
+    while (cur && cur.isBone) { depth++; cur = cur.parent; }
+    depthMap.set(b, depth);
+  });
+
+  // Render tree list (capped at 60 to avoid panel overflow)
+  bones.slice(0, 60).forEach(b => {
+    const depth = Math.min(depthMap.get(b) || 0, 4);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;padding-left:' + (depth * 8) + 'px;margin-bottom:1px';
+
+    const btn = document.createElement('div');
+    btn.className = 'bone-e2';
+    btn.title = b.name;
+    // Show parent → child arrow for non-roots
+    const arrow = depth > 0 ? '<span style="color:var(--t3);margin-right:2px">└</span>' : '';
+    btn.innerHTML = arrow + '<span style="color:var(--a2);flex-shrink:0">🦴</span>' + b.name.slice(0, 20);
+
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.bone-e2').forEach(x => x.classList.remove('bsel2'));
+      btn.classList.add('bsel2');
+      xform.attach(b);
+      // Also update the vtsel tag so user knows which bone is active
+      if (selEntry) $('vp-sel').textContent = (selEntry.name || '') + ' › 🦴 ' + b.name;
+      status('Bone: ' + b.name + '  •  R to rotate (children follow)  •  G to move  •  K for keyframe');
+    });
+
+    // Del button (for manual bones only — skip for SkinnedMesh bones to avoid breaking skinning)
+    const isManual = !b.userData.isSkinBone;
+    if (isManual) {
+      const del = document.createElement('button');
+      del.className = 'bone-del-btn'; del.title = 'Delete bone'; del.textContent = '✕';
+      del.addEventListener('click', e => {
+        e.stopPropagation();
+        if (xform.object === b) xform.detach();
+        const parent = b.parent; if (!parent) return;
+        b.children.filter(c => c.isBone).forEach(ch => parent.add(ch));
+        parent.remove(b);
+        if (rigAddParent === b) rigAddParent = null;
+        buildBoneList(entry);
+      });
+      row.appendChild(btn); row.appendChild(del);
+    } else {
+      row.appendChild(btn);
+    }
+    wrap.appendChild(row);
+  });
+
+  if (bones.length > 60) {
+    const more = document.createElement('div');
+    more.style.cssText = 'font-size:8px;color:var(--t3);padding:2px 4px';
+    more.textContent = '+' + (bones.length - 60) + ' more bones…';
+    wrap.appendChild(more);
+  }
+}
+
+function buildAnimList(entry) {
+  const wrap = $('animlist'), aw = $('animwrap'); wrap.innerHTML = '';
+  const anims = entry.mesh.userData._anims;
+  if (!anims || !anims.length) { aw.style.display = 'none'; return; }
+  aw.style.display = 'block';
+  anims.forEach(a => {
+    const d = document.createElement('button'); d.className = 'sm'; d.textContent = '▶ ' + a.name.slice(0, 22);
+    d.addEventListener('click', () => {
+      if (entry.mesh.userData._mixer) { entry.mesh.userData._mixer.stopAllAction(); entry.mesh.userData._mixer.clipAction(a).reset().play(); status('Playing: ' + a.name + '  on  ' + entry.name); }
+    });
+    wrap.appendChild(d);
+  });
+  const stop = document.createElement('button'); stop.className = 'sm'; stop.textContent = '⏹ Stop';
+  stop.addEventListener('click', () => { if (entry.mesh.userData._mixer) { entry.mesh.userData._mixer.stopAllAction(); status('Stopped'); } });
+  wrap.appendChild(stop);
+}
+
+function skelVis() {
+  if (!selEntry || !selEntry.skelHelper) return;
+  // Toggle only the SkeletonHelper visual — never touch actual Bone nodes
+  const nowVisible = selEntry.skelHelper.visible !== false;
+  selEntry.skelVis = !nowVisible;  // true = visible
+  selEntry.skelHelper.visible = !nowVisible;
+  const label = !nowVisible ? 'Hide Skeleton' : 'Show Skeleton';
+  $('skel-btn').textContent = label;
+  status((!nowVisible ? 'Skeleton visible' : 'Skeleton hidden') + '  —  ' + selEntry.name);
+}
+
+function hideRig() {
+  // IMPORTANT: We NEVER hide actual THREE.Bone nodes — that breaks skinned mesh deformation.
+  // We only toggle the SkeletonHelper (the visual overlay lines drawn over the model).
+  skelVis();
+}
+
+// Track user preference for light helpers so setHelpersVisible respects it
+function lightHelper() {
+  if (selEntry && selEntry.helper) {
+    const v = $('lhelp').checked;
+    selEntry.helper.visible = v;
+    selEntry._helperUserVis = v;
+  }
+}
+
+
+// ═══════════ MANUAL RIG SYSTEM ════════════════════════════════
+// For OBJ and any mesh without native bones.
+// Bones are THREE.Bone nodes added to the mesh hierarchy.
+// Clicking in the viewport in 'add' mode places bones; clicking
+// a bone in the list attaches TransformControls to it.
+
+let rigEditMode   = 'pose';      // 'pose' | 'add'
+let rigAddParent  = null;        // last placed bone (for chaining)
+let rigPlacingFor = null;        // the entry we're rigging
+
+function setRigEditMode(mode) {
+  rigEditMode = mode;
+  ['pose','add'].forEach(m => {
+    const b = $('rm-' + m); if (b) b.classList.toggle('rmon', m === mode);
+  });
+  const tip = $('rig-tip');
+  if (tip) tip.textContent = mode === 'add'
+    ? '+ BONE: click in viewport to place. First click = root, next = child chain.'
+    : 'POSE: click bone in list or viewport → G/R/S to transform. Children follow.';
+  if (mode === 'add') {
+    rigAddParent  = null;
+    rigPlacingFor = selEntry;
+    status('ADD BONE: click in viewport to place — first click = root bone');
+  } else {
+    status('POSE mode: click a bone → transform with G/R/S');
+  }
+}
+
+// Called from onVpUp when rigEditMode === 'add'
+function handleRigBonePlacement(e) {
+  if (rigEditMode !== 'add') return false;
+  if (!rigPlacingFor) return false;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  const ndc  = new THREE.Vector2(
+    ((e.clientX - rect.left) / rect.width)  *  2 - 1,
+   -((e.clientY - rect.top)  / rect.height) *  2 + 1
+  );
+  const ray = new THREE.Raycaster(); ray.setFromCamera(ndc, viewCam);
+
+  // Try to hit the model; fall back to ground plane
+  let placePt = null;
+  const modelMeshes = [];
+  rigPlacingFor.mesh.traverse(c => { if (c.isMesh) modelMeshes.push(c); });
+  const hits = ray.intersectObjects(modelMeshes, false);
+  if (hits.length) {
+    placePt = hits[0].point.clone();
+  } else {
+    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    placePt = new THREE.Vector3();
+    if (!ray.ray.intersectPlane(plane, placePt))
+      placePt = ray.ray.origin.clone().addScaledVector(ray.ray.direction, 5);
+  }
+
+  // Create a new Bone at placePt (world space)
+  const bone = new THREE.Bone();
+  bone.name  = 'Bone_' + (Date.now() % 100000);
+
+  if (!rigAddParent) {
+    // First bone — root: attach to mesh, convert world → local
+    rigPlacingFor.mesh.add(bone);
+    const localPt = rigPlacingFor.mesh.worldToLocal(placePt.clone());
+    bone.position.copy(localPt);
+  } else {
+    // Child bone — attach to parent bone
+    const parentWorldPos = new THREE.Vector3();
+    rigAddParent.getWorldPosition(parentWorldPos);
+    rigAddParent.add(bone);
+    // position relative to parent
+    const parentInvMatrix = new THREE.Matrix4().copy(rigAddParent.matrixWorld).invert();
+    bone.position.copy(placePt.clone().applyMatrix4(parentInvMatrix));
+  }
+
+  // Update/create skeleton helper
+  if (!rigPlacingFor.skelHelper) {
+    const sh = new THREE.SkeletonHelper(rigPlacingFor.mesh);
+    sh.userData.helper = true;
+    scene.add(sh);
+    rigPlacingFor.skelHelper = sh;
+    rigPlacingFor.skelVis    = true;
+    rigPlacingFor.hasSkel    = true;
+  }
+
+  rigAddParent = bone;  // next bone chains from here
+  buildBoneList(rigPlacingFor);
+
+  // Attach xform to the new bone for immediate positioning tweak
+  xform.attach(bone);
+  status('Bone placed: ' + bone.name + '  •  click again to chain, switch to POSE to finish');
+  return true;
+}
+
+function deleteSelBoneManual() {
+  // Delete the currently xform-attached bone (if it's a Bone and not a SkinnedMesh bone)
+  const node = xform.object;
+  if (!node || !node.isBone) { status('Select a bone first (click in bone list)'); return; }
+  // Detach children to parent before removing
+  const parent = node.parent;
+  node.children.filter(c => c.isBone).forEach(child => { parent.add(child); });
+  parent.remove(node);
+  xform.detach();
+  if (rigAddParent === node) rigAddParent = null;
+  if (selEntry) buildBoneList(selEntry);
+  status('Bone deleted');
+}
+
+// ═══════════ KEYFRAMES ═══════════════════════════════════════
+// ─── Per-node keyframe system ────────────────────────────────
+// entry.nodeKFs = Map<nodeUUID, { node: Object3D, frames: { [frameN]: {pos,rot,scale} } }>
+// This stores transforms per individual node (bone, mesh, root) so
+// rotating an elbow bone never corrupts the root position.
+
+function _ensureNodeKFs(entry) {
+  if (!entry.nodeKFs) entry.nodeKFs = new Map();
+}
+
+function addKF() {
+  if (!selEntry) { status('Select an object first'); return; }
+  _ensureNodeKFs(selEntry);
+
+  // The node we keyframe is whichever node xform is attached to
+  // (could be a Bone, a sub-mesh, or the root)
+  const node = xform.object || selMesh || selEntry.mesh;
+  if (!node) return;
+
+  let track = selEntry.nodeKFs.get(node.uuid);
+  if (!track) { track = { node, frames: {} }; selEntry.nodeKFs.set(node.uuid, track); }
+  track.frames[curF] = {
+    pos:   node.position.clone(),
+    rot:   new THREE.Euler(node.rotation.x, node.rotation.y, node.rotation.z, node.rotation.order),
+    scale: node.scale.clone()
+  };
+
+  // Also keep a flat keyframes map for timeline diamond display
+  if (!selEntry.keyframes) selEntry.keyframes = {};
+  selEntry.keyframes[curF] = true;
+
+  updateKFCount(); drawTL();
+  const nodeName = node.name || node.uuid.slice(0,8);
+  status('Key @ ' + curF + '  node: ' + nodeName + '  on  ' + selEntry.name);
+}
+
+function updateKFCount() {
+  if (!selEntry) return;
+  const n = Object.keys(selEntry.keyframes || {}).length;
+  $('kfc').textContent = n + ' keyframe' + (n !== 1 ? 's' : '');
+}
+
+// Interpolate between two frame snapshots for a single value
+function _interp(A, B, t) {
+  const pos   = new THREE.Vector3().lerpVectors(A.pos, B.pos, t);
+  const scale = new THREE.Vector3().lerpVectors(A.scale, B.scale, t);
+  const qA    = new THREE.Quaternion().setFromEuler(A.rot);
+  const qB    = new THREE.Quaternion().setFromEuler(B.rot);
+  const q     = qA.clone().slerp(qB, t);
+  return { pos, scale, q };
+}
+
+function applyKF(f) {
+  objects.forEach(e => {
+    _ensureNodeKFs(e);
+    if (!e.nodeKFs.size) return;
+
+    e.nodeKFs.forEach(track => {
+      const { node, frames } = track;
+      if (!node) return;
+      const frameNums = Object.keys(frames).map(Number).sort((a, b) => a - b);
+      if (!frameNums.length) return;
+
+      let bef = null, aft = null;
+      frameNums.forEach(fn => {
+        if (fn <= f) bef = fn;
+        if (fn >= f && aft === null) aft = fn;
+      });
+      if (bef === null && aft === null) return;
+      if (bef === null) bef = aft;
+      if (aft === null) aft = bef;
+
+      const A = frames[bef], B = frames[aft];
+      const t = aft !== bef ? Math.max(0, Math.min(1, (f - bef) / (aft - bef))) : 0;
+      const { pos, scale, q } = _interp(A, B, t);
+
+      node.position.copy(pos);
+      node.scale.copy(scale);
+      node.quaternion.copy(q);
+    });
+
+    if (e === selEntry) refreshProps();
+  });
+}
+
+function clearKF() {
+  if (!selEntry) return;
+  selEntry.keyframes = {};
+  _ensureNodeKFs(selEntry);
+  selEntry.nodeKFs.clear();
+  updateKFCount(); drawTL(); status('Keys cleared: ' + selEntry.name);
+}
+
+function clearAllKF() {
+  objects.forEach(o => {
+    o.keyframes = {};
+    _ensureNodeKFs(o);
+    o.nodeKFs.clear();
+  });
+  updateKFCount(); drawTL(); status('All keys cleared');
+}
+
+// ═══════════ PLAYBACK ════════════════════════════════════════
+function play()     { isPlaying ? stopPlay() : startPlay(); }
+function startPlay(){ isPlaying = true; lastFT = performance.now(); $('btn-play').textContent = '⏸'; $('btn-play').classList.add('on'); }
+function stopPlay() { isPlaying = false; $('btn-play').textContent = '▶'; $('btn-play').classList.remove('on'); }
+function go(f)      { curF = Math.max(0, Math.min(totalF - 1, f || 0)); applyKF(curF); updateFCtr(); drawTL(); }
+function step(d)    { go(curF + d); }
+function setTotal(v){ totalF = Math.max(1, v || 120); if (curF >= totalF) curF = 0; drawTL(); updateFCtr(); }
+function updateFCtr(){ $('fctr').textContent = String(curF).padStart(3, '0') + '/' + String(totalF).padStart(3, '0'); }
+
+// ═══════════ TIMELINE ════════════════════════════════════════
+const TL_LW = 90, TL_HH = 16, TL_TH = 18;
+function drawTL() {
+  if (!tlC || !tlX) return;
+  const W = tlC.width || 600, H = tlC.height || 120;
+  tlX.clearRect(0, 0, W, H);
+  tlX.fillStyle = '#0f1116'; tlX.fillRect(0, 0, W, H);
+  tlX.fillStyle = '#090a0d'; tlX.fillRect(TL_LW, 0, W - TL_LW, TL_HH);
+  const aW = W - TL_LW, step = Math.max(1, Math.ceil(totalF / (aW / 26)));
+  tlX.font = '8px Courier New';
+  for (let f = 0; f <= totalF; f += step) {
+    const x = TL_LW + (f / totalF) * aW;
+    tlX.fillStyle = '#1a1e28'; tlX.fillRect(x, 0, 1, H);
+    tlX.fillStyle = '#3a4055'; tlX.fillText(f, x + 2, TL_HH - 3);
+  }
+  objects.forEach((obj, i) => {
+    const y = TL_HH + i * TL_TH, col = COLORS[i % COLORS.length];
+    tlX.fillStyle = i % 2 ? '#0f1116' : '#111520'; tlX.fillRect(0, y, W, TL_TH);
+    tlX.fillStyle = selEntry === obj ? col : '#4a5268'; tlX.font = '8px Courier New'; tlX.fillText(obj.name.slice(0, 11), 3, y + TL_TH - 4);
+    tlX.fillStyle = col + '18'; tlX.fillRect(TL_LW, y, aW, TL_TH);
+    // Collect all unique frame numbers across all node tracks
+    const allFrameNums = new Set(Object.keys(obj.keyframes || {}));
+    if (obj.nodeKFs) obj.nodeKFs.forEach(track => Object.keys(track.frames).forEach(f2 => allFrameNums.add(f2)));
+    allFrameNums.forEach(f2 => {
+      const x = TL_LW + (parseInt(f2) / totalF) * aW, cy = y + TL_TH / 2;
+      tlX.save(); tlX.translate(x, cy); tlX.rotate(Math.PI / 4); tlX.fillStyle = col; tlX.fillRect(-3, -3, 6, 6); tlX.restore();
+    });
+  });
+  tlX.fillStyle = '#1a1e28'; tlX.fillRect(TL_LW, 0, 1, H);
+  const px = TL_LW + (curF / totalF) * aW;
+  tlX.strokeStyle = '#ff3c4e'; tlX.lineWidth = 1.5; tlX.setLineDash([]);
+  tlX.beginPath(); tlX.moveTo(px, 0); tlX.lineTo(px, H); tlX.stroke();
+  tlX.fillStyle = '#ff3c4e'; tlX.beginPath(); tlX.moveTo(px - 4, 0); tlX.lineTo(px + 4, 0); tlX.lineTo(px, 8); tlX.fill();
+}
+function onTLDown(e) {
+  const rect = tlC.getBoundingClientRect(), x = e.clientX - rect.left; if (x < TL_LW) return;
+  curF = Math.round(((x - TL_LW) / (tlC.width - TL_LW)) * totalF); curF = Math.max(0, Math.min(totalF, curF));
+  applyKF(curF); updateFCtr(); drawTL();
+}
+
+// ═══════════ RENDER ══════════════════════════════════════════
+function openRender() { $('rmodal').style.display = 'flex'; $('rprev').style.display = 'none'; $('r-save').style.display = 'none'; }
+function closeRender(){ $('rmodal').style.display = 'none'; }
+
+function doRender() {
+  const W = parseInt($('r-w').value) || 1920, H = parseInt($('r-h').value) || 1080;
+  const useCam = $('r-cam').checked && renderCam, alpha = $('r-alpha').checked;
+  const oldSz  = renderer.getSize(new THREE.Vector2());
+  renderer.setSize(W, H);
+  renderer.setClearColor(0x131620, alpha ? 0 : 1);
+  const helpers = [];
+  scene.traverse(o => { if (o.userData.helper) { helpers.push({ o, v: o.visible }); o.visible = false; } });
+  if (camGrp) camGrp.visible = false;
+  renderer.render(scene, useCam ? renderCam : viewCam);
+  renderDataURL = renderer.domElement.toDataURL('image/png');
+  helpers.forEach(({ o, v }) => o.visible = v);
+  if (camGrp) camGrp.visible = !isCamView;
+  renderer.setSize(oldSz.x, oldSz.y); renderer.setClearColor(0x131620, 1);
+  onResize();
+  $('rprev').src = renderDataURL; $('rprev').style.display = 'block'; $('r-save').style.display = 'inline-block';
+  status('Render done — ' + W + '×' + H);
+}
+
+function saveRender() {
+  if (!renderDataURL) return;
+  const a = document.createElement('a'); a.href = renderDataURL; a.download = ($('r-fname').value || 'render') + '.png'; a.click();
+  status('Saved as PNG');
+}
+
+
+
+// ── Quality presets ───────────────────────────────────────────
+const REC_PRESETS = {
+  '144':  { w: 256,  h: 144,  mbps: 0.5  },
+  '240':  { w: 426,  h: 240,  mbps: 1    },
+  '420':  { w: 756,  h: 420,  mbps: 2.5  },
+  '720':  { w: 1280, h: 720,  mbps: 8    },
+  '1080': { w: 1920, h: 1080, mbps: 16   },
+  '1440': { w: 2560, h: 1440, mbps: 24   },
+  '2160': { w: 3840, h: 2160, mbps: 45   },
+  '4320': { w: 7680, h: 4320, mbps: 120  },
+  '8640': { w: 15360, h: 8640, mbps: 280  },
+};
+
+// ═══════════ RECORDING ═══════════════════════════════════════
+function toggleRec() { isRec ? stopRec() : startRec(); }
+let _recSavedW = 0, _recSavedH = 0;
+let _recPreset = null;
+
+function startRec() {
+  if (!renderCam) { status('⚠ Add a camera first!'); return; }
+
+  // Read selected quality preset
+  const qualKey  = ($('rec-quality') || {}).value || '720';
+  _recPreset     = REC_PRESETS[qualKey] || REC_PRESETS['720'];
+  const { w, h, mbps } = _recPreset;
+
+  recChunks = [];
+
+  // Resize renderer to target resolution (updateStyle=false keeps canvas CSS intact)
+  const vpSize   = renderer.getSize(new THREE.Vector2());
+  _recSavedW     = vpSize.x; _recSavedH = vpSize.y;
+  renderer.setSize(w, h, false);
+  renderCam.aspect = w / h; renderCam.updateProjectionMatrix();
+
+  // Capture from canvas (now at target resolution internally)
+  const stream = renderer.domElement.captureStream(fps);
+
+  const mimeOptions = [
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+    ''
+  ];
+  const mime = mimeOptions.find(m => m === '' || MediaRecorder.isTypeSupported(m));
+  const recOptions = { videoBitsPerSecond: Math.round(mbps * 1_000_000) };
+  if (mime) recOptions.mimeType = mime;
+
+  mediaRec = new MediaRecorder(stream, recOptions);
+  mediaRec.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+  mediaRec.onstop = finishRec;
+  mediaRec.start(500);
+
+  isRec = true;
+  // Disable quality picker during recording
+  const qEl = $('rec-quality'); if (qEl) qEl.disabled = true;
+  setHelpersVisible(false);
+  if (!isCamView) toggleCamView();
+  if (!isPlaying) { go(0); startPlay(); }
+
+  $('btn-rec').textContent = '⏹ STOP'; $('btn-rec').className = 'tb rec';
+  $('rdot').style.display  = 'block';
+  $('cbadge').textContent  = '📷 CAM — 🔴 REC ' + qualKey + 'p';
+  status('Recording ' + w + '×' + h + ' @ ' + mbps + ' Mbps … press ⏹ STOP when done');
+}
+
+function stopRec() {
+  if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop();
+  isRec = false; stopPlay();
+
+  // Restore original viewport size
+  if (_recSavedW && _recSavedH) {
+    renderer.setSize(_recSavedW, _recSavedH, false);
+    _recSavedW = 0; _recSavedH = 0;
+  }
+  onResize(); // sync camera aspect + canvas
+
+  const qEl = $('rec-quality'); if (qEl) qEl.disabled = false;
+  $('btn-rec').textContent = '⏺ RECORD'; $('btn-rec').className = 'tb grn';
+  $('rdot').style.display  = 'none';
+  if (isCamView) toggleCamView();
+  setHelpersVisible(true);
+}
+
+function finishRec() {
+  const blob = new Blob(recChunks, { type: 'video/webm' });
+  const mb   = (blob.size / 1024 / 1024).toFixed(1);
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const { w, h, mbps } = _recPreset || { w: '?', h: '?', mbps: '?' };
+  a.href = url; a.download = 'PrusianAnimator_' + h + 'p.webm'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  status('✓ Saved — ' + mb + ' MB  |  ' + w + '×' + h + ' @ ' + mbps + ' Mbps');
+}
+
+
+// ═══════════ DUPLICATE (CTRL+C) ══════════════════════════════
+function duplicateSelected() {
+  if (!selEntry || selEntry.type === 'camera') return;
+
+  if (selEntry.type === 'light') {
+    // Re-add same light type
+    addLight(selEntry.lightType);
+    const copy = objects[objects.length - 1];
+    copy.mesh.position.copy(selEntry.mesh.position);
+    copy.mesh.position.x += 1.5;
+    copy.mesh.intensity = selEntry.mesh.intensity;
+    status('Light duplicated: ' + copy.name);
+    return;
+  }
+
+  // Deep clone mesh
+  const cloned = selEntry.mesh.clone();
+  cloned.position.copy(selEntry.mesh.position);
+  cloned.position.x += 1.5; // offset slightly
+  cloned.rotation.copy(selEntry.mesh.rotation);
+  cloned.scale.copy(selEntry.mesh.scale);
+
+  // Clone materials so colors are independent
+  cloned.traverse(c => {
+    if (c.isMesh && c.material) {
+      const mats = Array.isArray(c.material) ? c.material : [c.material];
+      c.material = mats.map(m => m.clone());
+      if (c.userData.origMats) c.userData.origMats = c.userData.origMats.map(m => m.clone());
+    }
+  });
+
+  const entry = { mesh: cloned, name: selEntry.name + '_copy', id: ++objId, type: selEntry.type, keyframes: {} };
+  scene.add(cloned);
+  objects.push(entry);
+
+  // Clone skeleton helper if present
+  if (selEntry.hasSkel) {
+    const sh = new THREE.SkeletonHelper(cloned); sh.userData.helper = true; scene.add(sh);
+    entry.skelHelper = sh; entry.hasSkel = true; entry.skelVis = true;
+  }
+  updateList(); selectEntry(entry);
+  status('Duplicated: ' + entry.name + '  (CTRL+C)');
+}
+
+// ═══════════ KEYBOARD ════════════════════════════════════════
+
+// ═══════════ FLY-CAM (middle-mouse + arrow keys) ════════════
+// Hold middle mouse button, then use arrow keys to pan/fly through the scene.
+const _flyKeys = new Set();    // which arrow keys are currently pressed
+let   _flyRafId = null;
+
+// FLY_SPEED_BASE: fraction of camera-to-target distance moved per frame.
+// This keeps movement feeling identical whether you're 1 unit or 10000 units from origin.
+const FLY_SPEED_BASE = 0.022;   // ~2.2% of orbit distance per frame
+const FLY_SPEED_MIN  = 0.04;    // absolute minimum so small scenes still move
+const FLY_SPEED_MAX  = 80;      // cap for enormous scenes
+
+function _startFlyLoop() {
+  if (_flyRafId) return;
+  function flyTick() {
+    if (!middleDown || _flyKeys.size === 0) { _flyRafId = null; return; }
+    _flyRafId = requestAnimationFrame(flyTick);
+
+    // Scale speed by current camera-to-target distance
+    const dist  = viewCam.position.distanceTo(orbit.target);
+    const speed = Math.max(FLY_SPEED_MIN, Math.min(FLY_SPEED_MAX, dist * FLY_SPEED_BASE));
+
+    // Use the EXACT direction the camera is currently facing (including vertical pitch).
+    const forward = new THREE.Vector3();
+    viewCam.getWorldDirection(forward);  // true 3D — no Y flattening
+
+    // Strafe right stays horizontal regardless of pitch
+    const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+
+    if (_flyKeys.has('arrowup'))    { viewCam.position.addScaledVector(forward,  speed); orbit.target.addScaledVector(forward,  speed); }
+    if (_flyKeys.has('arrowdown'))  { viewCam.position.addScaledVector(forward, -speed); orbit.target.addScaledVector(forward, -speed); }
+    if (_flyKeys.has('arrowleft'))  { viewCam.position.addScaledVector(right,   -speed); orbit.target.addScaledVector(right,   -speed); }
+    if (_flyKeys.has('arrowright')) { viewCam.position.addScaledVector(right,    speed); orbit.target.addScaledVector(right,    speed); }
+  }
+  _flyRafId = requestAnimationFrame(flyTick);
+}
+
+function onKey(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const key = e.key.toLowerCase();
+
+  // Arrow keys: fly-cam when middle mouse held, else timeline step
+  if (['arrowup','arrowdown','arrowleft','arrowright'].includes(key)) {
+    if (middleDown) {
+      e.preventDefault();
+      _flyKeys.add(key);
+      _startFlyLoop();
+      return;
+    }
+    // Default: step timeline
+    if (key === 'arrowleft')  step(-1);
+    if (key === 'arrowright') step(1);
+    return;
+  }
+
+  switch (key) {
+    case 'g': setMode('translate'); break;
+    case 'r': if (!e.ctrlKey && !e.metaKey) setMode('rotate'); break;
+    case 's': if (!e.ctrlKey && !e.metaKey) setMode('scale'); break;
+    case 'k': addKF(); break;
+    case ' ': e.preventDefault(); play(); break;
+    case 'delete': case 'backspace': del(); break;
+    case 'f': if (selEntry && selEntry.mesh) { const b = new THREE.Box3().setFromObject(selEntry.mesh); orbit.target.copy(b.getCenter(new THREE.Vector3())); } break;
+    case 'p': togglePartMode(); break;
+    case 'c': if (e.ctrlKey || e.metaKey) { e.preventDefault(); duplicateSelected(); } break;
+    case 'escape': deselectAll(); break;
+  }
+}
+
+// Clear fly keys on keyup so movement stops when key is released
+document.addEventListener('keyup', e => {
+  _flyKeys.delete(e.key.toLowerCase());
+  if (_flyKeys.size === 0) { _flyRafId = null; }
+});
+
+
+// ═══════════ HELP SYSTEM ═════════════════════════════════════
+const HELP_DATA = [
+  { cat:'Getting Started', topics:[
+    { ico:'⬡', name:'Interface Overview', steps:[
+      'Left panel — Scene hierarchy (all objects) + Add panel (meshes, lights, import)',
+      'Center — 3D Viewport. Left-drag = orbit, right-drag = pan, scroll = zoom.',
+      'Right panel — Properties for selected object (transform, color, physics, rig, keyframes)',
+      'Bottom — Timeline with keyframe diamonds and playback controls',
+      'Top bar — Transform modes, camera, record, render controls',
+    ], tip:'Click the <b>⬡ PRUSIAN ANIMATOR</b> logo anytime to open this help menu.' },
+    { ico:'🖱', name:'Viewport Navigation', steps:[
+      'Left-click drag — Orbit / rotate around the scene',
+      'Right-click drag or Middle-click drag — Pan the camera',
+      'Scroll wheel — Zoom in / out',
+      'Double-click on an object — Focus orbit target on it',
+      '<kbd>F</kbd> — Focus camera on selected object',
+      'Hold Middle Mouse + Arrow Keys — Fly through the scene in the exact direction the camera faces (including up/down pitch)',
+    ], tip:'<b>Tip:</b> rotate your POV first with left-drag, then hold middle mouse + arrows to fly exactly where you look.' },
+  ]},
+  { cat:'Importing Models', topics:[
+    { ico:'⬡', name:'FBX Import', steps:[
+      'Click Import FBX in the left panel or drag a .fbx file onto the window',
+      'The model auto-scales and lands on the ground plane',
+      'If the FBX has a skeleton, a SkeletonHelper appears automatically',
+      'Built-in animations appear in the Rig panel — click ▶ to play any clip',
+      'Multiple characters can each have their own animation running simultaneously',
+    ], tip:'<b>Supported:</b> FBX 2013+. Skinned meshes, morph targets, embedded textures.' },
+    { ico:'✦', name:'GLTF / GLB Import', steps:[
+      'Click Import GLTF / GLB or drag a .gltf or .glb file',
+      'GLB (binary) is preferred — single file, smaller, faster loading',
+      'Animations embedded in the GLTF play the same as FBX',
+      'PBR materials (metalness/roughness) are preserved automatically',
+    ], tip:'<b>Best format</b> for web — GLB gives the best quality/size balance.' },
+    { ico:'▣', name:'OBJ Import', steps:[
+      'Click Import OBJ or drag a .obj file',
+      'OBJ has no skeleton — use the Rig panel to add manual bones',
+      'Materials from .mtl files are auto-applied if present',
+    ], tip:'<b>.blend / .max files</b> cannot be opened in the browser. Export to FBX or GLTF from Blender/3dsMax first.' },
+  ]},
+  { cat:'Transforms', topics:[
+    { ico:'↔', name:'Move / Rotate / Scale', steps:[
+      'Click an object in the viewport or scene list to select it',
+      '<kbd>G</kbd> or MOVE in toolbar — translate gizmo',
+      '<kbd>R</kbd> or ROT — rotation gizmo',
+      '<kbd>S</kbd> or SCALE — scale gizmo',
+      'Drag gizmo handles to transform. Use the Properties panel for exact numeric values.',
+      '<kbd>Ctrl+C</kbd> — duplicate selected object with offset',
+      '<kbd>Del</kbd> / <kbd>Backspace</kbd> — delete selected object',
+    ], tip:'<b>Part Select mode</b> (▤ PART SELECT button or <kbd>P</kbd>) lets you click and transform individual sub-meshes of imported models.' },
+    { ico:'🦴', name:'Bone / Rig Transform', steps:[
+      'Select a model that has a skeleton (FBX/GLTF/OBJ with manual bones)',
+      'In the Rig panel, click a bone name — TransformControls attach to it',
+      'Press <kbd>R</kbd> to rotate — child bones (hand, fingers) follow automatically',
+      'For models without a skeleton (OBJ, primitives), click <b>+ BONE</b> then click in the viewport',
+      'First click = root bone. Each subsequent click chains a child off the last bone.',
+      'Switch to POSE mode to move and rotate placed bones',
+    ], tip:'Never hide actual Bone nodes — that breaks skinned mesh deformation. Only toggle the SkeletonHelper visual (Hide Skeleton button).' },
+  ]},
+  { cat:'Animation', topics:[
+    { ico:'◆', name:'Keyframe Animation', steps:[
+      'Move an object or bone to the desired pose at frame 0',
+      'Press <kbd>K</kbd> to save a keyframe at the current frame',
+      'Drag the timeline playhead to another frame, change the pose, press <kbd>K</kbd> again',
+      'Press <kbd>Space</kbd> or ▶ to preview the interpolated animation',
+      'Keyframes are per-node — rotating a bone stores only that bone\'s rotation',
+      'Each object has its own colored track in the timeline',
+    ], tip:'Multiple objects animate simultaneously. Add keys on different objects to create full scene animations.' },
+    { ico:'⏱', name:'Timeline Controls', steps:[
+      '⏮ / ⏭ — jump to start / end',
+      '◁ / ▷ — step one frame (also <kbd>←</kbd> <kbd>→</kbd> without middle mouse)',
+      '▶ — play / pause (also <kbd>Space</kbd>)',
+      'Drag the red playhead to scrub through the animation',
+      'Change FPS (24/30/60) and total frame count in the timeline bar',
+      'LOOP checkbox — toggles looping playback',
+    ] },
+  ]},
+  { cat:'Lights', topics:[
+    { ico:'💡', name:'Light Types', steps:[
+      '<b>Point</b> — emits in all directions from a point. Adjust distance and intensity.',
+      '<b>Spot</b> — cone of light. Set angle, penumbra, distance.',
+      '<b>Directional</b> — parallel sun rays. Best for hard shadows.',
+      '<b>Hemisphere</b> — sky color above, ground color below. Great ambient fill.',
+      '<b>Ambient</b> — flat uniform light. Fills dark areas with no shadows.',
+      '<b>Area</b> — rectangular softbox light.',
+    ], tip:'Select a light and adjust color, intensity, shadows in the Properties panel. The Helper checkbox shows/hides the light wireframe.' },
+    { ico:'★', name:'Lasers (Point to Point)', steps:[
+      'Click ★ Add Laser in the left panel',
+      'Click in the viewport to set Point A (first endpoint)',
+      'Click again to set Point B (second endpoint)',
+      'Choose type: Continuous (beam + glow) or Particles (beam + flying sparks)',
+      'Adjust color, thickness, glow intensity, particle speed/lifetime/size in Properties',
+      'Click ↺ Re-pick A → B to reposition the laser without losing settings',
+    ], tip:'Lasers use additive blending — they glow most brilliantly against dark backgrounds.' },
+  ]},
+  { cat:'Camera & Recording', topics:[
+    { ico:'📷', name:'Render Camera', steps:[
+      'Click 📷 CAMERA in the toolbar to add a render camera to the scene',
+      'Select the camera in the scene list, then use G/R/S to position it',
+      'Click 👁 CAM VIEW to preview from the camera perspective',
+      'Keyframe the camera to animate cinematic camera moves',
+      'The orange camera body hides automatically in CAM VIEW mode',
+    ] },
+    { ico:'⏺', name:'Video Recording', steps:[
+      'Add a camera first (📷 CAMERA button)',
+      'Select video quality from the dropdown next to ⏺ RECORD (144p → 4K)',
+      'Click ⏺ RECORD — playback starts automatically from frame 0',
+      'Press ⏹ STOP when done — the .webm file downloads automatically',
+      'All scene helpers (skeleton, light helpers, grid) are hidden during recording',
+    ], tip:'720p @ 8 Mbps is the best balance of quality and performance. Use 1080p+ for final exports, 144p for fast previews.' },
+    { ico:'⬛', name:'Render Still Image', steps:[
+      'Click ⬛ RENDER in the toolbar',
+      'Set width, height, choose render cam or viewport cam',
+      'Click ▶ Preview — the image appears in the dialog',
+      'Click ↓ Save PNG to download at the chosen resolution',
+      'Enable Transparent for a PNG with alpha channel',
+    ] },
+  ]},
+  { cat:'Objects & Scene', topics:[
+    { ico:'⊞', name:'Unite Objects (Group)', steps:[
+      'Click ⊞ Unite Objects in the left panel',
+      'Click Object A in the viewport or scene list',
+      'Click Object B — they join into a group proxy ⊞ A+B',
+      'Moving/rotating the group proxy moves all members as one',
+      'To add more: select the group → click ⊕ Add object to this group in Properties',
+      'To extend: click Unite Objects again, pick an existing group as A and any new object as B',
+      'Two groups can be merged: pick Group A as A and Group B as B',
+      'To separate: select the group → click ⊟ Dissolve Union',
+    ], tip:'Any combination can be united: meshes, lights, imported models, other groups.' },
+    { ico:'▤', name:'Part Select', steps:[
+      'Click ▤ PART SELECT in the toolbar or press <kbd>P</kbd>',
+      'Click any part of an imported model to select that sub-mesh',
+      'Transform, color, opacity all apply only to the selected part',
+      'For skinned models, clicking auto-selects the nearest bone',
+      'The Parts panel in Properties lists all sub-meshes',
+    ] },
+    { ico:'⬡', name:'Physics Simulation', steps:[
+      'Select any shape, scroll to Physics Properties in the right panel',
+      'Choose Particle — particles pour from the object downward with gravity',
+      'Choose Fluid — an animated water surface appears under the object',
+      'Adjust count, speed, lifetime, color, size, spread for particles',
+      'Adjust wave amplitude, speed, frequency, opacity, foam for fluid',
+      'Click ✕ Remove Simulation to clear the effect',
+    ] },
+  ]},
+  { cat:'Keyboard Shortcuts', topics:[
+    { ico:'⌨', name:'All Shortcuts',
+      shortcuts:[
+        ['G','Move (translate) mode'],
+        ['R','Rotate mode'],
+        ['S','Scale mode'],
+        ['K','Add keyframe at current frame'],
+        ['Space','Play / Pause animation'],
+        ['F','Focus camera on selected object'],
+        ['P','Toggle Part Select mode'],
+        ['Del / Backspace','Delete selected object'],
+        ['Ctrl+C','Duplicate selected object'],
+        ['← →','Step timeline -1 / +1 frame'],
+        ['Mid Mouse + ← → ↑ ↓','Fly through scene (camera-facing direction)'],
+        ['Left Drag','Orbit camera'],
+        ['Right Drag','Pan camera'],
+        ['Scroll','Zoom in / out'],
+        ['Double-click','Focus orbit on clicked object'],
+        ['Click logo','Open this Help menu'],
+      ]
+    }
+  ]},
+];
+
+let _helpActiveCat = 0;
+
+function openHelp() {
+  const modal = $('help-modal');
+  modal.classList.add('show');
+  _renderHelpCats();
+  _renderHelpContent(0);
+  const hs = $('help-search'); if (hs) { hs.value = ''; }
+  const nr = $('help-no-results'); if (nr) nr.style.display = 'none';
+}
+function closeHelp() {
+  const m = $('help-modal'); if (m) m.classList.remove('show');
+}
+
+function _renderHelpCats() {
+  const wrap = $('help-cats'); if (!wrap) return; wrap.innerHTML = '';
+  HELP_DATA.forEach((cat, i) => {
+    const d = document.createElement('div');
+    d.className = 'hcat' + (i === _helpActiveCat ? ' active' : '');
+    d.textContent = cat.cat;
+    d.addEventListener('click', () => {
+      _helpActiveCat = i;
+      document.querySelectorAll('.hcat').forEach((x, j) => x.classList.toggle('active', j === i));
+      _renderHelpContent(i);
+      const hs = $('help-search'); if (hs) hs.value = '';
+      const nr = $('help-no-results'); if (nr) nr.style.display = 'none';
+    });
+    wrap.appendChild(d);
+  });
+}
+
+function _renderHelpContent(catIdx) {
+  const content = $('help-content'); if (!content) return;
+  const nr = $('help-no-results');
+  if (nr) nr.style.display = 'none';
+  Array.from(content.children).forEach(c => { if (c !== nr) c.remove(); });
+  const cat = HELP_DATA[catIdx];
+  cat.topics.forEach(t => { content.insertBefore(_makeTopic(t), nr); });
+}
+
+function _makeTopic(t) {
+  const div = document.createElement('div');
+  div.className = 'htopic open';
+
+  const hd = document.createElement('div'); hd.className = 'htopic-hd';
+  hd.innerHTML = '<span class="htopic-ico">' + (t.ico||'○') + '</span>'
+    + '<span class="htopic-name">' + t.name + '</span>'
+    + '<span class="htopic-arrow">▶</span>';
+  hd.addEventListener('click', () => div.classList.toggle('open'));
+
+  const body = document.createElement('div'); body.className = 'htopic-body';
+
+  if (t.shortcuts) {
+    const grid = document.createElement('div'); grid.className = 'hgrid';
+    t.shortcuts.forEach(([k, v]) => {
+      const card = document.createElement('div'); card.className = 'hcard';
+      card.innerHTML = '<div class="hcard-k">' + k + '</div><div class="hcard-v">' + v + '</div>';
+      grid.appendChild(card);
+    });
+    body.appendChild(grid);
+  }
+
+  if (t.steps) {
+    t.steps.forEach((s, i) => {
+      const row = document.createElement('div'); row.className = 'hstep';
+      const num = document.createElement('div'); num.className = 'hstep-num'; num.textContent = i + 1;
+      const txt = document.createElement('div'); txt.className = 'hstep-txt';
+      txt.innerHTML = s.replace(/<kbd>(.*?)<\/kbd>/g, '<span class="hkey">$1</span>');
+      row.appendChild(num); row.appendChild(txt); body.appendChild(row);
+    });
+  }
+
+  if (t.tip) {
+    const tip = document.createElement('div'); tip.className = 'htip';
+    tip.innerHTML = t.tip; body.appendChild(tip);
+  }
+
+  div.appendChild(hd); div.appendChild(body);
+  return div;
+}
+
+function _helpSearch(q) {
+  const term = (q || '').toLowerCase().trim();
+  const content = $('help-content'); if (!content) return;
+  const nr = $('help-no-results');
+  Array.from(content.children).forEach(c => { if (c !== nr) c.remove(); });
+
+  if (!term) { _renderHelpContent(_helpActiveCat); if (nr) nr.style.display = 'none'; return; }
+
+  let found = 0;
+  HELP_DATA.forEach(cat => {
+    cat.topics.forEach(t => {
+      const haystack = (t.name + ' ' + (t.steps || []).join(' ') + ' ' + (t.tip || '') + ' ' + (t.shortcuts || []).flat().join(' ')).toLowerCase();
+      if (haystack.includes(term)) { content.insertBefore(_makeTopic(t), nr); found++; }
+    });
+  });
+  if (nr) nr.style.display = found ? 'none' : 'block';
+}
+
+
+// ═══════════ EXPORT SYSTEM ═══════════════════════════════════
+let _exportFmt = 'glb';
+
+function openExport() {
+  $('emodal').classList.add('show');
+  _setExportFmt('glb');
+  $('estat').textContent = 'Ready to export.';
+  $('eprog').style.display = 'none';
+  $('eprog-bar').style.width = '0';
+}
+function closeExport() { $('emodal').classList.remove('show'); }
+
+function _setExportFmt(fmt) {
+  _exportFmt = fmt;
+  ['glb','gltf','obj'].forEach(f => {
+    const b = $('efmt-' + f); if (b) b.classList.toggle('eon', f === fmt);
+  });
+  // Disable anim checkbox for OBJ (no anim support)
+  const animCb = $('e-anim');
+  if (animCb) { animCb.disabled = fmt === 'obj'; animCb.style.opacity = fmt === 'obj' ? '0.4' : '1'; }
+}
+
+function _exportStatus(msg, pct) {
+  const s = $('estat'); if (s) s.textContent = msg;
+  const pb = $('eprog'), bar = $('eprog-bar');
+  if (pb) pb.style.display = 'block';
+  if (bar) bar.style.width = (pct || 0) + '%';
+}
+
+function doExport() {
+  const fname   = ($('e-fname') ? $('e-fname').value : 'PrusianScene') || 'PrusianScene';
+  const selOnly = $('e-selonly') ? $('e-selonly').checked : false;
+  const inclAnim= $('e-anim')   ? $('e-anim').checked   : true;
+  const fmt     = _exportFmt;
+
+  // Build the export scene/root
+  // If selOnly and there's a selection: export just that object's mesh
+  // Otherwise: collect everything (exclude helpers)
+  let exportRoot;
+  if (selOnly && selEntry && selEntry.mesh) {
+    exportRoot = selEntry.mesh;
+  } else {
+    exportRoot = new THREE.Group();
+    objects.forEach(o => {
+      if (o.type === 'light' || o.type === 'camera' || o.type === 'laser') return; // skip non-geometry
+      exportRoot.add(o.mesh.clone());
+    });
+  }
+
+  _exportStatus('Preparing…', 10);
+
+  if (fmt === 'obj') {
+    try {
+      const exporter = new OBJExporter();
+      const result   = exporter.parse(exportRoot);
+      const blob     = new Blob([result], { type: 'text/plain' });
+      _downloadBlob(blob, fname + '.obj');
+      _exportStatus('✓ Exported as ' + fname + '.obj', 100);
+    } catch(e) { _exportStatus('Error: ' + e.message, 0); }
+    return;
+  }
+
+  // GLB or GLTF
+  const exporter = new GLTFExporter();
+  const options  = {
+    binary:     fmt === 'glb',
+    animations: inclAnim ? _collectAnimations() : [],
+    trs:        false,       // use matrix transforms
+    onlyVisible: true,
+    truncateDrawRange: false,
+  };
+
+  _exportStatus('Exporting…', 30);
+
+  exporter.parse(
+    exportRoot,
+    result => {
+      _exportStatus('Writing file…', 80);
+      let blob;
+      if (fmt === 'glb') {
+        blob = new Blob([result], { type: 'model/gltf-binary' });
+        _downloadBlob(blob, fname + '.glb');
+      } else {
+        const json = JSON.stringify(result, null, 2);
+        blob = new Blob([json], { type: 'model/gltf+json' });
+        _downloadBlob(blob, fname + '.gltf');
+      }
+      const mb = (blob.size / 1024 / 1024).toFixed(2);
+      _exportStatus('✓ Exported as ' + fname + '.' + fmt + '  (' + mb + ' MB)', 100);
+    },
+    err => { _exportStatus('Export error: ' + (err.message || err), 0); console.error(err); },
+    options
+  );
+}
+
+function _collectAnimations() {
+  // Collect ALL AnimationClips from all loaded objects
+  const clips = [];
+  objects.forEach(o => {
+    if (o.mesh && o.mesh.userData._anims) {
+      o.mesh.userData._anims.forEach(a => clips.push(a));
+    }
+  });
+  return clips;
+}
+
+function _downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+
+// ═══════════ ADD PANEL (dropdown from ADD button) ═══════════
+function toggleAddPanel() {
+  const p = $('add-panel-modal');
+  if (!p) return;
+  const isOpen = p.classList.contains('show');
+  p.classList.toggle('show', !isOpen);
+  const btn = $('btn-add-panel');
+  if (btn) btn.classList.toggle('on', !isOpen);
+}
+function closeAddPanel() {
+  const p = $('add-panel-modal'); if (p) p.classList.remove('show');
+  const btn = $('btn-add-panel'); if (btn) btn.classList.remove('on');
+}
+
+
+
+// ═══════════ ADD DROPDOWN ════════════════════════════════════
+function toggleAddDrop() {
+  const d = document.getElementById('add-drop');
+  const b = document.getElementById('btn-add-drop');
+  if (!d) return;
+  const open = d.classList.toggle('show');
+  if (b) b.classList.toggle('open', open);
+}
+function closeAddDrop() {
+  const d = document.getElementById('add-drop');
+  const b = document.getElementById('btn-add-drop');
+  if (d) d.classList.remove('show');
+  if (b) b.classList.remove('open');
+}
+function toggleAddCat(hdr) {
+  hdr.classList.toggle('collapsed');
+  const body = hdr.nextElementSibling;
+  if (body) body.classList.toggle('hidden');
+}
+// Expose (called from onclick outside module)
+window.toggleAddCat = toggleAddCat;
+window.toggleAddDrop = toggleAddDrop;
+window.closeAddDrop = closeAddDrop;
+
+// ═══════════ COLLAPSIBLE SECTIONS ═══════════════════════════
+function toggleSection(hdr) {
+  hdr.classList.toggle('collapsed');
+  const sec = hdr.nextElementSibling;
+  if (!sec || !sec.classList.contains('csec')) return;
+  sec.classList.toggle('hidden');
+}
+// Expose globally (called from onclick in HTML, outside module scope)
+window.toggleSection = toggleSection;
+
+// ═══════════ PANEL RESIZE ════════════════════════════════════
+function initResize() {
+  const leftPanel  = document.getElementById('left');
+  const rightPanel = document.getElementById('right');
+  const rhLeft     = document.getElementById('rh-left');
+  const rhRight    = document.getElementById('rh-right');
+  const tlPanel    = document.getElementById('tl');
+  const tlRh       = document.getElementById('tl-rh');
+
+  // Horizontal panel resizers (left / right panels)
+  function makeHResizer(handle, panel, side) {
+    let startX, startW;
+    handle.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      startX = e.clientX; startW = panel.offsetWidth;
+      handle.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', e => {
+      if (!handle.classList.contains('dragging')) return;
+      const dx  = e.clientX - startX;
+      const newW = side === 'left' ? startW + dx : startW - dx;
+      const min = parseInt(getComputedStyle(panel).minWidth) || 120;
+      const max = parseInt(getComputedStyle(panel).maxWidth) || 500;
+      panel.style.width = Math.max(min, Math.min(max, newW)) + 'px';
+      onResize();
+    });
+    handle.addEventListener('pointerup',     () => handle.classList.remove('dragging'));
+    handle.addEventListener('pointercancel', () => handle.classList.remove('dragging'));
+  }
+
+  // Vertical timeline resizer (drag up = taller, drag down = shorter)
+  function makeVResizer(handle, panel) {
+    let startY, startH;
+    handle.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      startY = e.clientY; startH = panel.offsetHeight;
+      handle.classList.add('dragging');
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', e => {
+      if (!handle.classList.contains('dragging')) return;
+      const dy   = e.clientY - startY;      // positive = dragged down
+      const newH = startH - dy;             // drag up → taller
+      const minH = parseInt(getComputedStyle(panel).minHeight) || 60;
+      const maxH = Math.floor(window.innerHeight * 0.5);
+      panel.style.height = Math.max(minH, Math.min(maxH, newH)) + 'px';
+      onResize();
+    });
+    handle.addEventListener('pointerup',     () => handle.classList.remove('dragging'));
+    handle.addEventListener('pointercancel', () => handle.classList.remove('dragging'));
+  }
+
+  if (rhLeft  && leftPanel)  makeHResizer(rhLeft,  leftPanel,  'left');
+  if (rhRight && rightPanel) makeHResizer(rhRight, rightPanel, 'right');
+  if (tlRh    && tlPanel)    makeVResizer(tlRh, tlPanel);
+}
+
+// ═══════════ EXPOSE TO HTML ══════════════════════════════════
+window.PA = {
+  // import
+  prim: addPrim, light: addLight, del,
+  // transform
+  setMode, prop: applyProp, rename, color: applyColor, resetColor,
+  setOpacity, setWireframe, setDoubleSide,
+  clearTexture, updateTexRepeat,
+  // lights
+  lightProp, lightHelper,
+  // camera
+  addCamera, toggleCamView,
+  // part mode
+  togglePartMode,
+  // rig
+  skelVis, hideRig, setRigEditMode, deleteSelBoneManual,
+  // keyframes
+  addKF, clearKF, clearAllKF,
+  // playback
+  play, go, step, setTotal, fps,
+  get totalF() { return totalF; },
+  // add dropdown
+  toggleAddDrop, closeAddDrop,
+  // selection
+  deselectAll,
+  // export
+  openExport, closeExport, _setExportFmt, doExport,
+  // render
+  openRender, closeRender, doRender, saveRender,
+  // unite
+  startUnite, cancelUnite, dissolveUnion,
+  // laser
+  startLaser, repickLaser, setLaserType, updateLaser,
+  // physics
+  setPhys, clearPhys, updatePhysConfig,
+  // help
+  openHelp, closeHelp, _helpSearch,
+  // duplicate
+  duplicateSelected,
+  // recording
+  toggleRec,
+};
+
+init();
+</script>
+
+<!-- ════ HELP MODAL ════ -->
+<div id="help-modal" onclick="if(event.target===this)PA.closeHelp()">
+  <div id="help-box">
+    <div id="help-topbar">
+      <div id="help-title">⬡ PRUSIAN ANIMATOR — HELP</div>
+      <input id="help-search" placeholder="Search features…" oninput="PA._helpSearch(this.value)">
+      <button id="help-close" onclick="PA.closeHelp()">✕</button>
+    </div>
+    <div id="help-main">
+      <div id="help-cats"></div>
+      <div id="help-content">
+        <div id="help-no-results">No results found for that search.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="emodal" onclick="if(event.target===this)PA.closeExport()">
+  <div id="ebox">
+    <div class="etitle">&#x2193; EXPORT SCENE / MODEL</div>
+
+    <!-- Filename -->
+    <div class="erow"><span class="elbl">Filename</span><input class="einp" id="e-fname" value="PrusianScene"></div>
+
+    <!-- Format picker -->
+    <div class="eopt-lbl" style="margin-top:4px">Choose Format</div>
+    <div class="efmt-grid">
+      <div class="efmt-btn eon" id="efmt-glb" onclick="PA._setExportFmt('glb')">
+        <span class="efmt-ico">✦</span><span class="efmt-ext">.GLB</span>
+        <span class="efmt-desc">Best quality.<br>Animations, materials, skeleton.</span>
+      </div>
+      <div class="efmt-btn" id="efmt-gltf" onclick="PA._setExportFmt('gltf')">
+        <span class="efmt-ico">📄</span><span class="efmt-ext">.GLTF</span>
+        <span class="efmt-desc">JSON + binary.<br>Editable format.</span>
+      </div>
+      <div class="efmt-btn" id="efmt-obj" onclick="PA._setExportFmt('obj')">
+        <span class="efmt-ico">▣</span><span class="efmt-ext">.OBJ</span>
+        <span class="efmt-desc">Geometry only.<br>No animations.</span>
+      </div>
+    </div>
+
+    <div class="eopt-sec">
+      <div class="eopt-lbl">Options</div>
+      <div class="erow"><span class="elbl">Include animations</span><input type="checkbox" id="e-anim" checked style="accent-color:var(--a3)"></div>
+      <div class="erow"><span class="elbl">Selected only</span><input type="checkbox" id="e-selonly" style="accent-color:var(--a3)"> <span style="font-size:8px;color:var(--t2)">unchecked = whole scene</span></div>
+      <div class="erow"><span class="elbl">Apply current pose</span><input type="checkbox" id="e-pose" checked style="accent-color:var(--a3)"> <span style="font-size:8px;color:var(--t2)">bakes frame 0 pose</span></div>
+    </div>
+
+    <div class="eopt-sec" style="border-color:#aa44ff44">
+      <div style="font-size:9px;color:#aa44ff;margin-bottom:4px">&#x26A0; About FBX export</div>
+      <div style="font-size:9px;color:var(--t2);line-height:1.6">FBX is a proprietary Autodesk binary format with no open JavaScript encoder. Use <b>GLB</b> for best compatibility — it imports directly into Blender, Unity, Unreal, and most 3D software.</div>
+    </div>
+
+    <div class="eprog" id="eprog"><div class="eprog-bar" id="eprog-bar"></div></div>
+    <div class="estat" id="estat">Ready to export.</div>
+
+    <div class="ebtns">
+      <button class="ebtn" onclick="PA.closeExport()">Cancel</button>
+      <button class="ebtn eprimary" onclick="PA.doExport()">&#x2193; Export</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>
